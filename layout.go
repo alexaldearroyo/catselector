@@ -1,43 +1,249 @@
-// layout.go
 package main
 
 import (
 	"fmt"
-	"path/filepath"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
 var (
-	headerStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205"))
-	dirStyle      = lipgloss.NewStyle().MarginRight(1)
-	fileStyle     = lipgloss.NewStyle().MarginRight(1)
-	previewStyle  = lipgloss.NewStyle().MarginLeft(1)
-	selectedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
-	focusStyle    = lipgloss.NewStyle().Background(lipgloss.Color("236"))
+	// Definición de colores exactamente como en el ejemplo Python
+	directoryStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))  // Verde
+	fileStyle          = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))  // Blanco
+	selectedItemStyle  = lipgloss.NewStyle().Reverse(true)                    // Invertido
+	markedItemStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))  // Amarillo
+	headerStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))  // Cyan
+	activeHeaderStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")) // Negro sobre Cyan
+	dirIconStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))  // Amarillo
+	fileIconStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))  // Azul
+	keyHintStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("5"))  // Magenta
+	keyHintTextStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))  // Blanco
+	magentaTextStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("5"))  // Magenta
+	infoCountStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))  // Azul
 )
 
-func renderDirectoryPanel(m Model, height, width int) string {
-	lines := []string{}
-	items := m.directories
-	if m.directory != m.initialDir {
-		items = append([]string{"..", "."}, items...)
-	} else {
-		items = append([]string{"."}, items...)
+// RenderLayout renderiza todo el layout de la aplicación
+func RenderLayout(m Model) string {
+	width, height := 100, 30 // Valores por defecto, idealmente obtenerlos del terminal real
+
+	// Calcular dimensiones de los paneles
+	leftPanelWidth := width / 3
+	middlePanelWidth := width / 3
+	rightPanelWidth := width - leftPanelWidth - middlePanelWidth
+
+	// Separadores para altura de contenido
+	headerLinesUsed := 1
+	panelHeight := height - 7 // Reservar espacio para header, footer y separador
+
+	// Renderizar header y títulos de paneles
+	header, headerLinesUsed, dirDisplayItems := renderHeader(m.directory, m.initialDir, width, int(m.activePanel), m.directories)
+
+	// Contenido principal
+	dirPanel := renderDirectoriesPanel(m, dirDisplayItems, leftPanelWidth, panelHeight, headerLinesUsed)
+	filePanel := renderFilesPanel(m, leftPanelWidth, middlePanelWidth, panelHeight, headerLinesUsed)
+	previewPanel := renderPreviewPanel(m, leftPanelWidth, middlePanelWidth, rightPanelWidth, panelHeight, headerLinesUsed)
+
+	// Separadores verticales
+	verticalSeparators := ""
+	for y := 0; y < panelHeight; y++ {
+		verticalSeparators += lipgloss.PlaceHorizontal(width, lipgloss.Left,
+			lipgloss.JoinHorizontal(lipgloss.Top,
+				lipgloss.PlaceHorizontal(leftPanelWidth, lipgloss.Right, "│"),
+				lipgloss.PlaceHorizontal(middlePanelWidth, lipgloss.Right, "│"),
+			))
+		if y < panelHeight-1 {
+			verticalSeparators += "\n"
+		}
 	}
 
-	for i := 0; i < height && i < len(items); i++ {
-		item := items[i]
-		icon := "📁"
-		fullPath := filepath.Join(m.directory, item)
-		isSelected := false
-		for _, sel := range m.selected {
-			if sel == fullPath {
-				isSelected = true
-				break
+	// Renderizar los contadores de elementos
+	itemCounts := renderItemCounts(m, leftPanelWidth, middlePanelWidth, rightPanelWidth, headerLinesUsed)
+
+	// Separador horizontal
+	separatorY := headerLinesUsed + 2 + panelHeight
+	horizontalSeparator := strings.Repeat("─", width)
+
+	// Footer con atajos de teclado
+	footer := renderKeybindings(m, width, separatorY)
+
+	// Ensamblar todas las partes
+	return lipgloss.JoinVertical(lipgloss.Left,
+		header,
+		itemCounts,
+		lipgloss.JoinHorizontal(lipgloss.Top, dirPanel, filePanel, previewPanel),
+		horizontalSeparator,
+		footer,
+	)
+}
+
+func renderHeader(directory, initialDir string, width int, activePanel int, directories []string) (string, int, []string) {
+	headerPrefix := "Directory: "
+	headerFull := headerPrefix + directory
+
+	// Calcular espacio reservado para el título y modo
+	reservedSpace := min(max(len("CopyScript")+len("Mode: EXCLUDE")+6, 30), width/2)
+	maxHeaderWidth := max(width-reservedSpace, 20)
+
+	headerLines := []string{}
+	headerLinesUsed := 1
+
+	if len(headerFull) <= maxHeaderWidth {
+		// Mostrar todo en una sola línea
+		lastSep := strings.LastIndex(directory, string(os.PathSeparator))
+		if lastSep != -1 {
+			dirPrefix := directory[:lastSep+1]
+			dirSuffix := directory[lastSep+1:]
+			headerLines = append(headerLines, headerPrefix+dirPrefix+markedItemStyle.Render(dirSuffix))
+		} else {
+			headerLines = append(headerLines, headerFull)
+		}
+		headerLinesUsed = 1
+	} else {
+		// Mostrar en múltiples líneas
+		headerLines = append(headerLines, "Directory:")
+		parts := strings.Split(directory, string(os.PathSeparator))
+		currentLine := ""
+		currentPos := 0
+		currentLineNum := 1
+
+		for i, part := range parts {
+			if i > 0 {
+				if currentPos+1 < width {
+					currentLine += string(os.PathSeparator)
+					currentPos++
+				} else {
+					headerLines = append(headerLines, currentLine)
+					currentLine = ""
+					currentPos = 0
+					currentLineNum++
+				}
+			}
+
+			if len(part) > width-1 {
+				for j := 0; j < len(part); j += width-1 {
+					end := min(j+width-1, len(part))
+					chunk := part[j:end]
+					isLast := i == len(parts)-1
+					if isLast {
+						currentLine += markedItemStyle.Render(chunk)
+					} else {
+						currentLine += chunk
+					}
+					headerLines = append(headerLines, currentLine)
+					currentLine = ""
+					currentPos = 0
+					currentLineNum++
+				}
+			} else {
+				if currentPos+len(part) <= width {
+					if i == len(parts)-1 {
+						currentLine += markedItemStyle.Render(part)
+					} else {
+						currentLine += part
+					}
+					currentPos += len(part)
+				} else {
+					headerLines = append(headerLines, currentLine)
+					currentLine = ""
+					currentPos = 0
+					currentLineNum++
+					if i == len(parts)-1 {
+						currentLine += markedItemStyle.Render(part)
+					} else {
+						currentLine += part
+					}
+					currentPos += len(part)
+				}
 			}
 		}
+
+		if currentLine != "" {
+			headerLines = append(headerLines, currentLine)
+		}
+
+		headerLinesUsed = len(headerLines)
+	}
+
+	// Títulos de paneles
+	titles := []string{"Directories [d]", "Files [f]", "Preview"}
+	if activePanel == 1 {
+		titles[2] = "Preview Subdirectories"
+	} else if activePanel == 2 {
+		titles[2] = "Preview File"
+	} else {
+		titles[2] = "Preview"
+	}
+
+	panelTitleLine := ""
+	for i, title := range titles {
+		if activePanel == i+1 {
+			panelTitleLine += activeHeaderStyle.Render(title)
+		} else {
+			panelTitleLine += headerStyle.Render(title)
+		}
+
+		if i < 2 {
+			panelTitleLine += strings.Repeat(" ", width/3-len(title))
+		}
+	}
+
+	headerLines = append(headerLines, panelTitleLine)
+	headerLinesUsed += 1
+
+	// Panel de directorios a mostrar
+	var dirDisplayItems []string
+	if directory == initialDir {
+		dirDisplayItems = append([]string{"."}, directories...)
+	} else {
+		dirDisplayItems = append([]string{"..", "."}, directories...)
+	}
+
+	// Colocar el título de la app en la esquina superior derecha
+	appTitle := "CopyScript"
+	header := headerLines[0] + strings.Repeat(" ", width-len(headerLines[0])-len(appTitle)) + markedItemStyle.Render(appTitle)
+
+	// Añadir resto de líneas del header
+	for i := 1; i < len(headerLines); i++ {
+		header += "\n" + headerLines[i]
+	}
+
+	// Incluir info sobre subdirectorios
+	subdirLine := headerLinesUsed - 1
+	subdirMode := "Subdirectories: "
+	includedText := "Included"
+	if !directories[0].includeSubdirs { // Esto dependerá de cómo almacenes esta info
+		includedText = "Not included"
+	}
+
+	// Creamos un string con toda la info de subdirectorios
+	subdirInfo := keyHintTextStyle.Render(subdirMode) + magentaTextStyle.Render(includedText)
+
+	return header, headerLinesUsed, dirDisplayItems
+}
+
+func renderDirectoriesPanel(m Model, dirDisplayItems []string, leftPanelWidth int, panelHeight int, headerLinesUsed int) string {
+	dirContent := ""
+
+	// Mostrar cada elemento del directorio
+	for i, item := range dirDisplayItems {
+		yPos := i + headerLinesUsed + 3
+
+		fullPath := item
+		if item != ".." {
+			fullPath = fmt.Sprintf("%s%c%s", m.directory, os.PathSeparator, item)
+		} else {
+			fullPath = fmt.Sprintf("%s", strings.TrimSuffix(m.directory, string(os.PathSeparator)))
+		}
+
+		isSelected := contains(m.selected, fullPath)
+
+		// Verificar si este item tiene el foco
+		hasFocus := (m.activePanel == directoriesPanel && i == m.position)
+
+		icon := "📁"
 		marker := "  "
 		if isSelected {
 			if m.includeSubdirs {
@@ -47,64 +253,222 @@ func renderDirectoryPanel(m Model, height, width int) string {
 			}
 		}
 
-		content := marker + item
-		if len(content) > width-2 {
-			content = content[:width-5] + "..."
-		}
+		content := fmt.Sprintf("%s%s", marker, item)
 
-		line := icon + " " + content
-		if m.activePanel == directoriesPanel && m.position == i {
-			line = focusStyle.Render(line)
+		// Aplicar estilo según el estado
+		if hasFocus {
+			dirContent += selectedItemStyle.Render(icon + " " + content) + "\n"
+		} else {
+			if isSelected {
+				dirContent += dirIconStyle.Render(icon) + " " + markedItemStyle.Render(content) + "\n"
+			} else {
+				dirContent += dirIconStyle.Render(icon) + " " + directoryStyle.Render(content) + "\n"
+			}
 		}
-		lines = append(lines, line)
 	}
 
-	// Scrollbar mock (provisional, sin scroll real aún)
-	if len(items) > height {
-		lines[height-1] = lines[height-1][:width-1] + "↓"
-	}
+	// TODO: Añadir scrollbar para directorios si es necesario
 
-	return strings.Join(lines, "\n")
+	return dirContent
 }
 
-func (m Model) View() string {
-	header := headerStyle.Render("ExtraCat - " + m.directory)
+func renderFilesPanel(m Model, leftPanelWidth, middlePanelWidth, panelHeight, headerLinesUsed int) string {
+	fileContent := ""
 
-	// DIRECTORIOS
-	dirs := []string{"Directories:"}
-	for i, d := range m.directories {
-		line := d
-		if i == m.position && m.activePanel == directoriesPanel {
-			line = focusStyle.Render("* " + line)
-		} else {
-			line = "  " + line
+	for i, item := range m.files {
+		yPos := i + headerLinesUsed + 3
+
+		// Determinar directorio actual para la ruta completa
+		fileDir := m.directory
+		if m.currentPreviewDirectory != "" {
+			fileDir = m.currentPreviewDirectory
 		}
-		dirs = append(dirs, line)
-	}
-	dirView := dirStyle.Render(strings.Join(dirs, "\n"))
 
-	// ARCHIVOS
-	files := []string{"Files:"}
-	for i, f := range m.files {
-		line := f
-		if i == m.position && m.activePanel == filesPanel {
-			line = focusStyle.Render("* " + line)
-		} else {
-			line = "  " + line
+		fullPath := fmt.Sprintf("%s%c%s", fileDir, os.PathSeparator, item)
+
+		// Determinar si está seleccionado
+		isSelected := false
+		// TODO: Implementar lógica completa de selección como en el original
+
+		marker := "*"
+		if !isSelected {
+			marker = " "
 		}
-		files = append(files, line)
+
+		icon := GetFileIcon(fullPath)
+
+		// Verificar si tiene el foco
+		hasFocus := (m.activePanel == filesPanel && i == m.position)
+
+		if hasFocus {
+			fileContent += selectedItemStyle.Render(icon + " " + marker + item) + "\n"
+		} else {
+			if isSelected {
+				fileContent += fileIconStyle.Render(icon) + " " + markedItemStyle.Render(marker+item) + "\n"
+			} else {
+				fileContent += fileIconStyle.Render(icon) + " " + fileStyle.Render(marker+item) + "\n"
+			}
+		}
 	}
-	fileView := fileStyle.Render(strings.Join(files, "\n"))
 
-	// PREVIEW
-	preview := []string{"Preview:"}
-	for _, line := range m.previewContent {
-		preview = append(preview, line)
+	// TODO: Añadir scrollbar para archivos si es necesario
+
+	return fileContent
+}
+
+func renderPreviewPanel(m Model, leftPanelWidth, middlePanelWidth, rightPanelWidth, panelHeight, headerLinesUsed int) string {
+	previewContent := ""
+
+	for i, line := range m.previewContent {
+		yPos := i + headerLinesUsed + 3
+
+		actualLine := i
+		highlight := (m.activePanel == previewPanel && actualLine == m.previewPosition)
+
+		if strings.HasPrefix(line, "📁 ") {
+			icon := "📁"
+			content := strings.TrimPrefix(line, "📁 ")
+			markerPresent := strings.HasPrefix(content, "* ")
+			contentClean := content
+			if markerPresent {
+				contentClean = strings.TrimPrefix(content, "* ")
+			}
+
+			fullPath := fmt.Sprintf("%s%c%s", m.currentPreviewDirectory, os.PathSeparator, contentClean)
+
+			isSelected := contains(m.selected, fullPath)
+
+			style := fileStyle
+			if isSelected {
+				style = markedItemStyle
+			}
+			if highlight {
+				style = selectedItemStyle
+			}
+
+			previewContent += dirIconStyle.Render(icon) + " " + style.Render(content) + "\n"
+		} else if containsAnyPrefix(line, []string{"📄", "📜", "📝", "⚙️", "🖼️", "🎵", "🎬", "📦", "📕", "📘", "📗", "📙", "🚀", "🌐", "🐙"}) {
+			icon := string([]rune(line)[0])
+			rest := strings.TrimPrefix(line, icon+" ")
+			isSelected := strings.HasPrefix(rest, "*")
+
+			style := fileStyle
+			if isSelected {
+				style = markedItemStyle
+			}
+			if highlight {
+				style = selectedItemStyle
+			}
+
+			previewContent += fileIconStyle.Render(icon) + " " + style.Render(rest) + "\n"
+		} else {
+			style := lipgloss.NewStyle()
+			if strings.HasPrefix(strings.TrimSpace(line), "*") {
+				style = markedItemStyle
+			}
+			if highlight {
+				style = selectedItemStyle
+			}
+
+			previewContent += style.Render(line) + "\n"
+		}
 	}
-	previewView := previewStyle.Render(strings.Join(preview, "\n"))
 
-	// COMPOSICIÓN FINAL
-	layout := lipgloss.JoinHorizontal(lipgloss.Top, dirView, fileView, previewView)
+	// TODO: Añadir scrollbar para preview si es necesario
 
-	return fmt.Sprintf("%s\n%s", header, layout)
+	return previewContent
+}
+
+func renderItemCounts(m Model, leftPanelWidth, middlePanelWidth, rightPanelWidth, headerLinesUsed int) string {
+	// Aquí implementaríamos la lógica de contadores como en el original
+	// Por simplicidad, mostramos valores de ejemplo
+	dirCountDisplay := infoCountStyle.Render("10 items")
+	fileCountDisplay := infoCountStyle.Render("5 files")
+	previewCountDisplay := infoCountStyle.Render("3 subdirs")
+
+	// TODO: Calcular contadores reales basados en los datos del modelo
+
+	itemCounts := lipgloss.JoinHorizontal(lipgloss.Top,
+		lipgloss.PlaceHorizontal(leftPanelWidth, lipgloss.Left, dirCountDisplay),
+		lipgloss.PlaceHorizontal(middlePanelWidth, lipgloss.Left, fileCountDisplay),
+		lipgloss.PlaceHorizontal(rightPanelWidth, lipgloss.Left, previewCountDisplay),
+	)
+
+	return itemCounts
+}
+
+func renderKeybindings(m Model, width int, separatorY int) string {
+	keyBindings := []string{
+		"k/j: Up & Down", "s: Select", "o: Export & Open",
+		"h/l: Go into", "a: Select all", "c: Copy to clipboard",
+		"Esc/h: Go Back", "i: Include subdirs", "q: Quit",
+	}
+
+	keyBindingsText := ""
+
+	for i, binding := range keyBindings {
+		keyEnd := strings.Index(binding, ":")
+		if keyEnd != -1 {
+			key := binding[:keyEnd]
+			desc := binding[keyEnd:]
+
+			keyBindingsText += keyHintStyle.Render(key) + keyHintTextStyle.Render(desc)
+
+			if i < len(keyBindings)-1 {
+				if i % 3 == 2 {
+					keyBindingsText += "\n"
+				} else {
+					keyBindingsText += strings.Repeat(" ", (width/3)-len(binding))
+				}
+			}
+		}
+	}
+
+	// Información de selección
+	selectedFilesCount := len(m.selected)
+	selectedDirsCount := 0 // TODO: Calcular basado en la lógica real
+
+	selectionInfo := fmt.Sprintf("Selected: %d Files, %d Directories", selectedFilesCount, selectedDirsCount)
+
+	footer := keyBindingsText
+
+	if m.statusMessage != "" && time.Now().Unix() - m.statusTime < 2 {
+		footer += "\n" + markedItemStyle.Render(m.statusMessage)
+	}
+
+	return footer
+}
+
+// Funciones auxiliares
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func containsAnyPrefix(s string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix+" ") {
+			return true
+		}
+	}
+	return false
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
