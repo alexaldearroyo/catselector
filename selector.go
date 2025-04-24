@@ -117,15 +117,6 @@ func (m *Model) updatePreview() {
 	} else if m.activePanel == filesPanel && len(m.files) > 0 && m.position < len(m.files) {
 		name := m.files[m.position]
 		filePath := filepath.Join(m.directory, name)
-		isSelected := contains(m.selected, filePath)
-		marker := ""
-		if isSelected {
-			marker = "*"
-		} else {
-			marker = " "
-		}
-		icon := GetFileIcon(filePath)
-
 		// Intentar mostrar contenido para archivos de texto
 		if isTextFile(filePath) {
 			data, err := os.ReadFile(filePath)

@@ -13,7 +13,7 @@ func main() {
 	}
 
 	model := NewSelector(initialDir)
-	p := tea.NewProgram(model)
+	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	if err := p.Start(); err != nil {
 		panic(err)

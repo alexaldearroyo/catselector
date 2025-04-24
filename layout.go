@@ -39,7 +39,7 @@ func RenderLayout(m Model) string {
 	panelHeight := height - 7 // Reservar espacio para header, footer y separador
 
 	// Renderizar header y títulos de paneles
-	header, headerLinesUsed, dirDisplayItems := renderHeader(m.directory, m.initialDir, width, int(m.activePanel), m.directories)
+	header, headerLinesUsed, dirDisplayItems := renderHeader(m.directory, m.initialDir, width, int(m.activePanel), m.directories, m.includeSubdirs)
 
 	// Contenido principal
 	dirPanel := renderDirectoriesPanel(m, dirDisplayItems, leftPanelWidth, panelHeight, headerLinesUsed)
@@ -79,7 +79,7 @@ func RenderLayout(m Model) string {
 	)
 }
 
-func renderHeader(directory, initialDir string, width int, activePanel int, directories []string) (string, int, []string) {
+func renderHeader(directory, initialDir string, width int, activePanel int, directories []string, includeSubdirs bool) (string, int, []string) {
 	headerPrefix := "Directory: "
 	headerFull := headerPrefix + directory
 
@@ -211,17 +211,17 @@ func renderHeader(directory, initialDir string, width int, activePanel int, dire
 	}
 
 	// Incluir info sobre subdirectorios
-	subdirLine := headerLinesUsed - 1
 	subdirMode := "Subdirectories: "
 	includedText := "Included"
-	if !directories[0].includeSubdirs { // Esto dependerá de cómo almacenes esta info
+	if !includeSubdirs {
 		includedText = "Not included"
 	}
 
 	// Creamos un string con toda la info de subdirectorios
 	subdirInfo := keyHintTextStyle.Render(subdirMode) + magentaTextStyle.Render(includedText)
+	header += "\n" + subdirInfo
 
-	return header, headerLinesUsed, dirDisplayItems
+	return header, headerLinesUsed + 1, dirDisplayItems
 }
 
 func renderDirectoriesPanel(m Model, dirDisplayItems []string, leftPanelWidth int, panelHeight int, headerLinesUsed int) string {
@@ -229,8 +229,6 @@ func renderDirectoriesPanel(m Model, dirDisplayItems []string, leftPanelWidth in
 
 	// Mostrar cada elemento del directorio
 	for i, item := range dirDisplayItems {
-		yPos := i + headerLinesUsed + 3
-
 		fullPath := item
 		if item != ".." {
 			fullPath = fmt.Sprintf("%s%c%s", m.directory, os.PathSeparator, item)
@@ -276,8 +274,6 @@ func renderFilesPanel(m Model, leftPanelWidth, middlePanelWidth, panelHeight, he
 	fileContent := ""
 
 	for i, item := range m.files {
-		yPos := i + headerLinesUsed + 3
-
 		// Determinar directorio actual para la ruta completa
 		fileDir := m.directory
 		if m.currentPreviewDirectory != "" {
@@ -287,8 +283,7 @@ func renderFilesPanel(m Model, leftPanelWidth, middlePanelWidth, panelHeight, he
 		fullPath := fmt.Sprintf("%s%c%s", fileDir, os.PathSeparator, item)
 
 		// Determinar si está seleccionado
-		isSelected := false
-		// TODO: Implementar lógica completa de selección como en el original
+		isSelected := contains(m.selected, fullPath)
 
 		marker := "*"
 		if !isSelected {
@@ -320,8 +315,6 @@ func renderPreviewPanel(m Model, leftPanelWidth, middlePanelWidth, rightPanelWid
 	previewContent := ""
 
 	for i, line := range m.previewContent {
-		yPos := i + headerLinesUsed + 3
-
 		actualLine := i
 		highlight := (m.activePanel == previewPanel && actualLine == m.previewPosition)
 
@@ -334,7 +327,12 @@ func renderPreviewPanel(m Model, leftPanelWidth, middlePanelWidth, rightPanelWid
 				contentClean = strings.TrimPrefix(content, "* ")
 			}
 
-			fullPath := fmt.Sprintf("%s%c%s", m.currentPreviewDirectory, os.PathSeparator, contentClean)
+			var fullPath string
+			if m.currentPreviewDirectory != "" {
+				fullPath = fmt.Sprintf("%s%c%s", m.currentPreviewDirectory, os.PathSeparator, contentClean)
+			} else {
+				fullPath = fmt.Sprintf("%s%c%s", m.directory, os.PathSeparator, contentClean)
+			}
 
 			isSelected := contains(m.selected, fullPath)
 
@@ -424,12 +422,7 @@ func renderKeybindings(m Model, width int, separatorY int) string {
 		}
 	}
 
-	// Información de selección
-	selectedFilesCount := len(m.selected)
-	selectedDirsCount := 0 // TODO: Calcular basado en la lógica real
-
-	selectionInfo := fmt.Sprintf("Selected: %d Files, %d Directories", selectedFilesCount, selectedDirsCount)
-
+	// Creamos la variable pero la usamos directamente
 	footer := keyBindingsText
 
 	if m.statusMessage != "" && time.Now().Unix() - m.statusTime < 2 {
