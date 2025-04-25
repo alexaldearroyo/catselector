@@ -50,6 +50,19 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				items = s.Filtered // Actualizar los items con los nuevos
 			}
 		}
+	case "esc", "h":
+		// Navegar hacia atrás si no estamos en el directorio raíz
+		if s.Directory != "/" {
+			parentDir := filepath.Dir(s.Directory)
+			// Verificar si el directorio padre existe y es accesible
+			if info, err := os.Stat(parentDir); err == nil && info.IsDir() {
+				s.Directory = parentDir
+				s.Position = 0
+				s.Filtered = PrepareDirItems(parentDir)
+				position = 0
+				items = s.Filtered // Actualizar los items con los nuevos
+			}
+		}
 	}
 
 	// Actualizar la posición en el selector
