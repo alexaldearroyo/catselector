@@ -33,13 +33,28 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 
 	// 2ª línea en pantalla estrecha
 	if narrow {
-		header += "\n" + DirectoryDir.Render(currentDir)
+		// Dividir el directorio en partes
+		parts := strings.Split(currentDir, "/")
+		lastPart := parts[len(parts)-1]
+		parentDir := strings.Join(parts[:len(parts)-1], "/")
+		if parentDir != "" {
+			parentDir += "/"
+		}
+		header += "\n" + DirectoryText.Render(parentDir) + DirectoryDir.Render(lastPart)
 	} else {
+		// Dividir el directorio en partes
+		parts := strings.Split(currentDir, "/")
+		lastPart := parts[len(parts)-1]
+		parentDir := strings.Join(parts[:len(parts)-1], "/")
+		if parentDir != "" {
+			parentDir += "/"
+		}
 		inLineSpaces := width - len(dirPrefix) - len(currentDir) - len(titleText)
 		header = fmt.Sprintf(
-			"%s%s%s%s",
+			"%s%s%s%s%s",
 			DirectoryText.Render(dirPrefix),
-			DirectoryDir.Render(currentDir),
+			DirectoryText.Render(parentDir),
+			DirectoryDir.Render(lastPart),
 			strings.Repeat(" ", inLineSpaces),
 			HeaderTitle.Render(titleText),
 		)
