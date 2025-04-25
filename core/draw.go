@@ -60,7 +60,7 @@ func DrawLayout() string {
 		if padding < 0 {
 			padding = 0
 		}
-		return Green.Render(text) + strings.Repeat(" ", padding)
+		return Cyan.Render(text) + strings.Repeat(" ", padding)
 	}
 
 	left := renderLeft("Directories")
@@ -156,7 +156,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 		}
 
 		icon := "📁"
-		line := icon + " " + content
+		line := icon + content
 
 		// Rellenar hasta el ancho del panel
 		padding := width - lipgloss.Width(line)
@@ -166,11 +166,11 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 
 		// Estilos
 		if hasFocus {
-			b.WriteString(Inverse.Render(line) + "\n")
+			b.WriteString(Focus.Render(line) + "\n")
 		} else if isSelected {
 			b.WriteString(Selected.Render(line) + "\n")
 		} else {
-			b.WriteString(Normal.Render(line) + "\n")
+			b.WriteString(Green.Render(line) + "\n")
 		}
 	}
 

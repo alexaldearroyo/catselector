@@ -7,6 +7,8 @@ import "github.com/charmbracelet/lipgloss"
 var (
 	// Directories
 	Green = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Background(lipgloss.Color("0"))
+	// Panel Headers
+	Cyan = lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Background(lipgloss.Color("0"))
 	// Files
 	White = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Background(lipgloss.Color("0"))
 	// Selected item
@@ -31,7 +33,7 @@ var (
 // Styles for the layout (combined into one block)
 var (
 	// Directory text and the directory display
-	DirectoryText = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Background(lipgloss.Color("0"))
+	DirectoryText = lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Background(lipgloss.Color("0"))
 	DirectoryDir  = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Background(lipgloss.Color("0"))
 	// Title on the right (Cat Explorer)
 	HeaderTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Background(lipgloss.Color("0"))
@@ -39,7 +41,8 @@ var (
 
 
 var (
-	Inverse  = lipgloss.NewStyle().Reverse(true)
+	Focus = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("0")).
+	Background(lipgloss.Color("7")) // blanco
 	Selected = lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
-	Normal   = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
 )
