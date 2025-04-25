@@ -11,9 +11,8 @@ import (
 )
 
 // Function that generates the layout as a string instead of printing it
-func DrawLayout() string {
-	width, _ := getTerminalSize()
-	dir           := getCurrentDirectory()
+func DrawLayout(position int, items []string) string {	width, _ := getTerminalSize()
+	dir           := GetCurrentDirectory()
 
 	dirPrefix  := "Directory: "
 	titleText  := "Cat Explorer"
@@ -70,9 +69,8 @@ func DrawLayout() string {
 	header += left + middle + right + "\n"
 
 		// Datos para el panel izquierdo
-		items := prepareDirItems(dir)
+		// items = PrepareDirItems(dir) // Usar = si ya está declarada
 		selected := map[string]bool{}
-		position := 0
 		start := 0
 		_, height := getTerminalSize()
 		panelHeight := height - 5
@@ -114,14 +112,6 @@ func getTerminalSize() (int, int) {
 	return width, height
 }
 
-// Get the current directory
-func getCurrentDirectory() string {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "/" // Return root if there's an error getting the current directory
-	}
-	return dir
-}
 
 func renderLeftPanel(items []string, selected map[string]bool, directory string, position, start, height, width int, active bool, includeSubdirs bool) string {
 	var b strings.Builder

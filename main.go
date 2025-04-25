@@ -26,10 +26,17 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// Start the application model
-	p := tea.NewProgram(model{}) // Pass the model here
+	// Crear el modelo inicial
+	initialModel := model{
+		position: 0,
+		items:    core.PrepareDirItems(core.GetCurrentDirectory()), // Inicializar items
+		selected: make(map[string]bool),
+	}
 
-	// Display the interface for the first time
+	// Iniciar el programa con el modelo
+	p := tea.NewProgram(initialModel)
+
+	// Ejecutar la aplicación
 	err := p.Start()
 	if err != nil {
 		fmt.Println("Error: ", err)
@@ -42,28 +49,38 @@ func main() {
 	fmt.Print("\033[?1049l")
 }
 
-// The application model for Bubble Tea
-type model struct{}
+// El modelo de la aplicación para Bubble Tea
+type model struct {
+	position int
+	items    []string
+	selected map[string]bool
+}
 
 func (m model) Init() tea.Cmd {
+	// Inicializar la posición y los elementos si es necesario
 	return nil
 }
 
+// main.go
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	// Handle key messages
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c": // Exit the program
+		case "ctrl+c":
 			return m, tea.Quit
-		case "enter": // Handle Enter key
-			fmt.Println("Enter key pressed")
 		}
+		// El manejo de las teclas ya se hace en input.go.
+		m.position = core.HandleKeyPress(msg.String(), m.position, len(m.items), m.selected, m.items)
 	}
 	return m, nil
 }
 
 func (m model) View() string {
-	// Call the layout drawing function and return the string
-	return core.DrawLayout()
+	// Obtener los elementos de los directorios y la posición
+	dir := core.GetCurrentDirectory()
+	items := core.PrepareDirItems(dir)
+
+	// Llamar a la función para dibujar el layout
+	return core.DrawLayout(m.position, items)
 }

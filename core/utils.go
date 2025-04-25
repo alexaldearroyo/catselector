@@ -12,7 +12,7 @@ func OpenTextFile(path string) {
 }
 
 
-func prepareDirItems(pwd string) []string {
+func PrepareDirItems(pwd string) []string {
 	files, _ := os.ReadDir(pwd)
 	var dirs []string
 	for _, f := range files {
@@ -22,4 +22,14 @@ func prepareDirItems(pwd string) []string {
 	}
 	sort.Strings(dirs)
 	return append([]string{"."}, dirs...)
+}
+
+
+// Get the current directory
+func GetCurrentDirectory() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "/" // Return root if there's an error getting the current directory
+	}
+	return dir
 }
