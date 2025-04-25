@@ -1,5 +1,10 @@
 package core
 
+import (
+	"os"
+	"path/filepath"
+)
+
 func CaptureInput(key string) string {
 	// Aquí manejas las teclas que recibes
 	switch key {
@@ -11,7 +16,6 @@ func CaptureInput(key string) string {
 		return ""
 	}
 }
-
 
 func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
 	switch key {
@@ -25,11 +29,31 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		if position < 0 {
 			position = itemCount - 1
 		}
+	case "enter", "l":
+		if position >= 0 && position < len(items) {
+			item := items[position]
+			var newDir string
+			if item == ".." {
+				newDir = filepath.Dir(s.Directory)
+			} else if item == "." {
+				newDir = s.Directory
+			} else {
+				newDir = filepath.Join(s.Directory, item)
+			}
+
+			// Verificar si el directorio existe y es accesible
+			if info, err := os.Stat(newDir); err == nil && info.IsDir() {
+				s.Directory = newDir
+				s.Position = 0
+				s.Filtered = PrepareDirItems(newDir)
+				position = 0
+				items = s.Filtered // Actualizar los items con los nuevos
+			}
+		}
 	}
 
 	// Actualizar la posición en el selector
 	s.Position = position
-	s.Filtered = items
 
 	// Actualizar los archivos cuando se navega
 	s.UpdateFilesForCurrentDirectory()

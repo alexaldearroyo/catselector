@@ -84,17 +84,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Sincronizar el estado del selector con el modelo
 		m.selector.Position = m.position
-		m.selector.Filtered = m.items
 		m.selector.Selection = m.selected
+		m.items = m.selector.Filtered // Actualizar los items del modelo con los filtrados
 	}
 	return m, nil
 }
 
 func (m model) View() string {
 	// Obtener los elementos de los directorios y la posición
-	dir := core.GetCurrentDirectory()
-	items := core.PrepareDirItems(dir)
-	m.items = items // Actualizar los items del modelo
+	dir := m.selector.Directory
+	items := m.selector.Filtered
 
 	// Actualizar los archivos del directorio seleccionado
 	m.selector.UpdateFilesForCurrentDirectory()
