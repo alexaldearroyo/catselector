@@ -144,6 +144,13 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				s.History = s.History[:len(s.History)-1]
 			}
 		}
+	case "s":
+		if s.ActivePanel == 2 && s.FilePosition >= 0 && s.FilePosition < len(s.Files) {
+			// Obtener el nombre del archivo seleccionado
+			selectedFile := s.Files[s.FilePosition]
+			// Cambiar el estado de selección
+			s.Selection[selectedFile] = !s.Selection[selectedFile]
+		}
 	}
 
 	// Actualizar la posición en el selector

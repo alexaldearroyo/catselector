@@ -156,13 +156,28 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 	for i := 0; i < panelHeight && i < len(files); i++ {
 		file := files[i]
 		icon := GetFileIcon(file)
-		line := icon + "  " + file
+
+		// Verificar si el archivo está seleccionado
+		isSelected := false
+		if activePanel == 2 {
+			// Obtener el selector del modelo actual
+			selector := GetCurrentSelector()
+			isSelected = selector.Selection[file]
+		}
+
+		// Añadir asterisco si está seleccionado
+		marker := "  "
+		if isSelected {
+			marker = " *"
+		}
+
+		line := icon + marker + file
 
 		// Truncar el nombre del archivo si es demasiado largo
 		maxWidth := panelWidth - 2 // Dejamos espacio para el scrollbar
 		if lipgloss.Width(line) > maxWidth {
 			// Calcular cuánto espacio tenemos para el nombre del archivo
-			iconWidth := lipgloss.Width(icon + "  ")
+			iconWidth := lipgloss.Width(icon + marker)
 			availableWidth := maxWidth - iconWidth - 3 // 3 para "..."
 
 			// Truncar el nombre del archivo
@@ -171,13 +186,16 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 				if len(truncatedName) > availableWidth {
 					truncatedName = truncatedName[:availableWidth] + "..."
 				}
-				line = icon + "  " + truncatedName
+				line = icon + marker + truncatedName
 			}
 		}
 
 		// Aplicar el estilo Focus si el panel está activo y este es el archivo seleccionado
 		if activePanel == 2 && i == filePosition {
 			b.WriteString(Focus.Render(line) + "\n")
+		} else if isSelected {
+			// Aplicar estilo amarillo para archivos seleccionados
+			b.WriteString(Yellow.Render(line) + "\n")
 		} else {
 			b.WriteString(White.Render(line) + "\n")
 		}
@@ -532,4 +550,22 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 
 
 	return b.String()
+}
+
+// Variable global para mantener el selector actual
+var currentSelector *Selector
+
+// Función para establecer el selector actual
+func SetCurrentSelector(s *Selector) {
+	currentSelector = s
+}
+
+// Función para obtener el selector actual
+func GetCurrentSelector() *Selector {
+	if currentSelector == nil {
+		currentSelector = &Selector{
+			Selection: make(map[string]bool),
+		}
+	}
+	return currentSelector
 }

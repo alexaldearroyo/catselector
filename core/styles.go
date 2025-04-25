@@ -28,6 +28,8 @@ var (
 	KeyHintText = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Background(lipgloss.Color("0"))
 	// Magenta text
 	MagentaText = lipgloss.NewStyle().Foreground(lipgloss.Color("13")).Background(lipgloss.Color("0"))
+	// Yellow text for selected files
+	Yellow = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 )
 
 // Styles for the layout (combined into one block)

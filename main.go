@@ -88,6 +88,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.selector.Selection = m.selected
 		m.items = m.selector.Filtered // Actualizar los items del modelo con los filtrados
 
+		// Actualizar el selector actual en el paquete core
+		core.SetCurrentSelector(&m.selector)
+
 		// Si la posición cambió en el panel de directorios, actualizar los archivos
 		if oldPosition != m.position && m.selector.ActivePanel == 1 {
 			m.selector.UpdateFilesForCurrentDirectory()
