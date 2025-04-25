@@ -26,12 +26,20 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// Crear el modelo inicial
-	initialModel := model{
-		position: 0,
-		items:    core.PrepareDirItems(core.GetCurrentDirectory()), // Inicializar items
-		selected: make(map[string]bool),
-	}
+// Crear el modelo inicial
+initialModel := model{
+	position: 0,
+	items:    core.PrepareDirItems(core.GetCurrentDirectory()),
+	selected: make(map[string]bool),
+	selector: core.Selector{
+		Directory:   core.GetCurrentDirectory(),
+		ActivePanel: 1,
+		Position:    0,
+		Selection:   make(map[string]bool),
+		Filtered:    core.PrepareDirItems(core.GetCurrentDirectory()),
+		Files:       []string{},
+	},
+}
 
 	// Iniciar el programa con el modelo
 	p := tea.NewProgram(initialModel)
@@ -54,6 +62,7 @@ type model struct {
 	position int
 	items    []string
 	selected map[string]bool
+	selector core.Selector // Agregar el selector aquí
 }
 
 func (m model) Init() tea.Cmd {
@@ -71,7 +80,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		// El manejo de las teclas ya se hace en input.go.
-		m.position = core.HandleKeyPress(msg.String(), m.position, len(m.items), m.selected, m.items)
+		m.position = core.HandleKeyPress(msg.String(), m.position, len(m.items), m.selected, m.items, &m.selector)
+
+		// Sincronizar el estado del selector con el modelo
+		m.selector.Position = m.position
+		m.selector.Filtered = m.items
+		m.selector.Selection = m.selected
 	}
 	return m, nil
 }
@@ -80,7 +94,12 @@ func (m model) View() string {
 	// Obtener los elementos de los directorios y la posición
 	dir := core.GetCurrentDirectory()
 	items := core.PrepareDirItems(dir)
+	m.items = items // Actualizar los items del modelo
 
-	// Llamar a la función para dibujar el layout
-	return core.DrawLayout(m.position, items)
+	// Actualizar los archivos del directorio seleccionado
+	m.selector.UpdateFilesForCurrentDirectory()
+	files := m.selector.Files
+
+	// Renderizar la vista con los archivos actualizados
+	return core.DrawLayout(m.position, items, dir, files)
 }

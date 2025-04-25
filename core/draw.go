@@ -10,46 +10,42 @@ import (
 	"golang.org/x/term"
 )
 
-// Function that generates the layout as a string instead of printing it
-func DrawLayout(position int, items []string) string {	width, _ := getTerminalSize()
-	dir           := GetCurrentDirectory()
-
-	dirPrefix  := "Directory: "
-	titleText  := "Cat Explorer"
+func DrawLayout(position int, items []string, currentDir string, files []string) string {
+	width, height := getTerminalSize()
+	dirPrefix := "Directory: "
+	titleText := "Cat Explorer"
 	minSpacing := 2
 
 	available := width - len(dirPrefix) - len(titleText) - minSpacing
-	narrow    := len(dir) > available
+	narrow := len(currentDir) > available
 
 	// 1ª línea: prefijo + espacios + título
 	spaces := width - len(dirPrefix) - len(titleText)
 	if spaces < minSpacing {
-			spaces = minSpacing
+		spaces = minSpacing
 	}
 	header := fmt.Sprintf(
-			"%s%s%s",
-			DirectoryText.Render(dirPrefix),
-			strings.Repeat(" ", spaces),
-			HeaderTitle.Render(titleText),
+		"%s%s%s",
+		DirectoryText.Render(dirPrefix),
+		strings.Repeat(" ", spaces),
+		HeaderTitle.Render(titleText),
 	)
 
-	// 2ª línea  en pantalla estrecha
+	// 2ª línea en pantalla estrecha
 	if narrow {
-			// 2ª línea: directorio en sí
-			header += "\n" + DirectoryDir.Render(dir)
+		header += "\n" + DirectoryDir.Render(currentDir)
 	} else {
-			// todo en una línea si cabe
-			inLineSpaces := width - len(dirPrefix) - len(dir) - len(titleText)
-			header = fmt.Sprintf(
-					"%s%s%s%s",
-					DirectoryText.Render(dirPrefix),
-					DirectoryDir.Render(dir),
-					strings.Repeat(" ", inLineSpaces),
-					HeaderTitle.Render(titleText),
-			)
+		inLineSpaces := width - len(dirPrefix) - len(currentDir) - len(titleText)
+		header = fmt.Sprintf(
+			"%s%s%s%s",
+			DirectoryText.Render(dirPrefix),
+			DirectoryDir.Render(currentDir),
+			strings.Repeat(" ", inLineSpaces),
+			HeaderTitle.Render(titleText),
+		)
 	}
 
-	header += "\n" // deja una línea en blanco antes de los paneles
+	header += "\n" // dejar una línea en blanco antes de los paneles
 
 	// Panel layout
 	panelWidth := width / 3
@@ -68,19 +64,86 @@ func DrawLayout(position int, items []string) string {	width, _ := getTerminalSi
 
 	header += left + middle + right + "\n"
 
-		// Datos para el panel izquierdo
-		// items = PrepareDirItems(dir) // Usar = si ya está declarada
-		selected := map[string]bool{}
-		start := 0
-		_, height := getTerminalSize()
-		panelHeight := height - 5
-		active := true
-		includeSubdirs := false
+	// Panel izquierdo (Directories)
+	selected := map[string]bool{}
+	start := 0
+	panelHeight := height - 5
+	active := true
+	includeSubdirs := false
 
-		leftPanel := renderLeftPanel(items, selected, dir, position, start, panelHeight, panelWidth, active, includeSubdirs)
+	leftPanel := renderLeftPanel(items, selected, currentDir, position, start, panelHeight, panelWidth, active, includeSubdirs)
 
-		return header + leftPanel
+	// Panel de archivos (Files)
+	filePanel := renderFilePanel(files, position, panelWidth, height, panelHeight)
+
+	// Panel derecho (Preview)
+	rightPanel := strings.Repeat(" ", panelWidth) + "\n"
+
+	// Combinar los paneles horizontalmente
+	var result strings.Builder
+	result.WriteString(header)
+
+	// Dividir los paneles en líneas
+	leftLines := strings.Split(leftPanel, "\n")
+	fileLines := strings.Split(filePanel, "\n")
+	rightLines := strings.Split(rightPanel, "\n")
+
+	// Encontrar el máximo número de líneas
+	maxLines := len(leftLines)
+	if len(fileLines) > maxLines {
+		maxLines = len(fileLines)
+	}
+	if len(rightLines) > maxLines {
+		maxLines = len(rightLines)
+	}
+
+	// Combinar las líneas horizontalmente
+	for i := 0; i < maxLines; i++ {
+		leftLine := ""
+		if i < len(leftLines) {
+			leftLine = leftLines[i]
+		}
+		fileLine := ""
+		if i < len(fileLines) {
+			fileLine = fileLines[i]
+		}
+		rightLine := ""
+		if i < len(rightLines) {
+			rightLine = rightLines[i]
+		}
+
+		// Asegurar que cada línea tenga el ancho correcto
+		leftLine = lipgloss.PlaceHorizontal(panelWidth, lipgloss.Left, leftLine)
+		fileLine = lipgloss.PlaceHorizontal(panelWidth, lipgloss.Left, fileLine)
+		rightLine = lipgloss.PlaceHorizontal(panelWidth, lipgloss.Left, rightLine)
+
+		result.WriteString(leftLine + fileLine + rightLine + "\n")
+	}
+
+	return result.String()
 }
+
+// Esta función debería manejar el renderizado de los archivos
+func renderFilePanel(files []string, position, panelWidth, height, panelHeight int) string {
+	var b strings.Builder
+
+	for i := 0; i < panelHeight && i < len(files); i++ {
+		file := files[i]
+		hasFocus := i == position
+		icon := "📄"
+		line := icon + " " + file
+
+		// Estilos
+		if hasFocus {
+			b.WriteString(Focus.Render(line) + "\n")
+		} else {
+			b.WriteString(White.Render(line) + "\n")
+		}
+	}
+
+	return b.String()
+}
+
 
 // Helper function to split directory path into multiple lines
 func splitDirectory(dir string, maxWidth int) []string {
