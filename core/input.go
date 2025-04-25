@@ -144,54 +144,36 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				s.History = s.History[:len(s.History)-1]
 			}
 		}
+	case "i":
+		// Toggle del modo include
+		s.IncludeMode = !s.IncludeMode
+
 	case "s":
-		if s.ActivePanel == 1 && position >= 0 && position < len(items) {
-			// Obtener el directorio seleccionado
-			item := items[position]
-			var selectedDir string
-			if item == ".." {
-				selectedDir = filepath.Dir(s.Directory)
-			} else if item == "." {
-				selectedDir = s.Directory
-			} else {
-				selectedDir = filepath.Join(s.Directory, item)
-			}
+		if s.ActivePanel == 1 {
+			// Toggle de selección del directorio actual
+			if position >= 0 && position < len(items) {
+				item := items[position]
+				if item != ".." && item != "." {
+					// Obtener el selector actual
+					selector := GetCurrentSelector()
 
-			// Verificar si el directorio existe y es accesible
-			if info, err := os.Stat(selectedDir); err == nil && info.IsDir() {
-				// Cambiar el estado de selección del directorio
-				s.Selection[item] = !s.Selection[item]
+					// Determinar el estado actual de selección
+					isSelected := selector.Selection[item]
 
-				// Si el directorio está seleccionado, seleccionar todos sus archivos
-				if s.Selection[item] {
-					// Actualizar la lista de archivos para el directorio seleccionado
-					files, err := os.ReadDir(selectedDir)
-					if err == nil {
-						var fileList []string
-						for _, file := range files {
-							if !file.IsDir() { // Solo archivos
-								fileList = append(fileList, file.Name())
-								s.Selection[file.Name()] = true
-							}
-						}
-						s.Files = fileList // Actualizamos los archivos
+					// Procesar el directorio actual
+					dirPath := filepath.Join(s.Directory, item)
+					processDirectory(selector, dirPath, item, !isSelected)
+
+					// Actualizar la lista de archivos si es necesario
+					if !isSelected {
+						// Si estamos seleccionando, actualizar la lista de archivos
+						UpdateFileList(selector, s.Directory, item)
+					} else {
+						// Si estamos deseleccionando, limpiar la lista de archivos
+						s.Files = []string{}
+						s.FilePosition = 0
 					}
-				} else {
-					// Si se deselecciona el directorio, deseleccionar todos sus archivos
-					files, err := os.ReadDir(selectedDir)
-					if err == nil {
-						for _, file := range files {
-							if !file.IsDir() { // Solo archivos
-								s.Selection[file.Name()] = false
-							}
-						}
-					}
-					// Limpiar la lista de archivos
-					s.Files = []string{}
 				}
-
-				// Forzar la actualización de los archivos
-				s.UpdateFilesForCurrentDirectory()
 			}
 		} else if s.ActivePanel == 2 && s.FilePosition >= 0 && s.FilePosition < len(s.Files) {
 			// Obtener el nombre del archivo seleccionado
@@ -286,4 +268,58 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 	s.UpdateFilesForCurrentDirectory()
 
 	return position
+}
+
+// Función recursiva para procesar directorios y archivos
+func processDirectory(selector *Selector, dirPath string, item string, selectState bool) {
+	// Actualizar el estado de selección del directorio actual
+	selector.Selection[item] = selectState
+
+	// Si estamos en modo include y seleccionando, procesar subdirectorios
+	if selector.IncludeMode && selectState {
+		// Leer el contenido del directorio
+		entries, err := os.ReadDir(dirPath)
+		if err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					// Procesar subdirectorios recursivamente
+					subdirPath := filepath.Join(dirPath, entry.Name())
+					processDirectory(selector, subdirPath, entry.Name(), selectState)
+				} else {
+					// Seleccionar archivos
+					selector.Selection[entry.Name()] = selectState
+				}
+			}
+		}
+	} else if !selectState {
+		// Si estamos deseleccionando, limpiar todos los subdirectorios y archivos
+		entries, err := os.ReadDir(dirPath)
+		if err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					// Limpiar subdirectorios recursivamente
+					subdirPath := filepath.Join(dirPath, entry.Name())
+					processDirectory(selector, subdirPath, entry.Name(), false)
+				} else {
+					// Deseleccionar archivos
+					delete(selector.Selection, entry.Name())
+				}
+			}
+		}
+	}
+}
+
+// UpdateFileList actualiza la lista de archivos para un directorio
+func UpdateFileList(selector *Selector, currentDir string, item string) {
+	dirPath := filepath.Join(currentDir, item)
+	files, err := os.ReadDir(dirPath)
+	if err == nil {
+		var fileList []string
+		for _, file := range files {
+			if !file.IsDir() { // Solo archivos
+				fileList = append(fileList, file.Name())
+			}
+		}
+		selector.Files = fileList
+	}
 }

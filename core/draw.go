@@ -78,7 +78,14 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		return Cyan.Render(text) + strings.Repeat(" ", padding)
 	}
 
-	left := renderLeft("Directories", activePanel == 1)
+	// Obtener el selector actual para verificar el modo include
+	selector := GetCurrentSelector()
+	includeModeText := ""
+	if selector.IncludeMode {
+		includeModeText = " [Include Mode]"
+	}
+
+	left := renderLeft("Directories"+includeModeText, activePanel == 1)
 	middle := renderLeft("Files", activePanel == 2)
 	right := renderLeft("Preview", activePanel == 3)
 
@@ -214,6 +221,9 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 func renderPreviewPanel(dir string, width, height int, files []string, filePosition int, activePanel int, items []string, position int) string {
 	var b strings.Builder
 
+	// Obtener el selector actual
+	selector := GetCurrentSelector()
+
 	// Si el panel activo es el de directorios, mostrar subdirectorios
 	if activePanel == 1 {
 		// Determinar el directorio seleccionado
@@ -256,7 +266,17 @@ func renderPreviewPanel(dir string, width, height int, files []string, filePosit
 		for i := 0; i < height && i < len(subdirs); i++ {
 			subdir := subdirs[i]
 			icon := GetFileIcon(filepath.Join(selectedDir, subdir))
-			line := icon + "  " + subdir
+
+			// Verificar si el subdirectorio está seleccionado y si el modo include está activo
+			isSelected := selector.Selection[subdir] && selector.IncludeMode
+
+			// Añadir el marcador correspondiente
+			marker := "  "
+			if isSelected {
+				marker = " •"
+			}
+
+			line := icon + marker + subdir
 
 			// Rellenar hasta el ancho del panel
 			padding := width - lipgloss.Width(line)
@@ -264,7 +284,12 @@ func renderPreviewPanel(dir string, width, height int, files []string, filePosit
 				line += strings.Repeat(" ", padding)
 			}
 
-			b.WriteString(Green.Render(line) + "\n")
+			// Aplicar el estilo correspondiente
+			if isSelected {
+				b.WriteString(Yellow.Render(line) + "\n")
+			} else {
+				b.WriteString(Green.Render(line) + "\n")
+			}
 		}
 
 		// Rellenar con líneas vacías si es necesario

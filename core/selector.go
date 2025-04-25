@@ -21,6 +21,7 @@ type Selector struct {
 	Filtered    []string          // Items filtrados para mostrar
 	Files       []string          // Archivos en el subdirectorio actual
 	History     []NavigationHistory // Historial de navegación
+	IncludeMode bool              // Modo de inclusión de subdirectorios
 }
 
 // Método para actualizar los archivos del directorio seleccionado
