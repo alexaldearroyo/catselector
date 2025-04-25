@@ -50,9 +50,17 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				})
 
 				s.Directory = newDir
-				s.Position = 0
 				s.Filtered = PrepareDirItems(newDir)
-				position = 0
+
+				// Buscar la posición de "." en la nueva lista
+				for i, item := range s.Filtered {
+					if item == "." {
+						position = i
+						s.Position = i
+						break
+					}
+				}
+
 				items = s.Filtered // Actualizar los items con los nuevos
 			}
 		}

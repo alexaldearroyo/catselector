@@ -35,6 +35,12 @@ func PrepareDirItems(pwd string) []string {
 		}
 	}
 	sort.Strings(dirs)
+
+	// Añadir ".." como primer item si no estamos en el directorio root
+	rootDir := GetRootDirectory()
+	if pwd != rootDir {
+		return append([]string{"..", "."}, dirs...)
+	}
 	return append([]string{"."}, dirs...)
 }
 
