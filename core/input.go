@@ -47,8 +47,12 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		// Guardar el panel anterior
 		previousPanel := s.ActivePanel
 
-		// Cambiar entre paneles
-		s.ActivePanel = (s.ActivePanel % 3) + 1
+		// Cambiar solo entre los paneles de directorios y archivos (1 y 2)
+		if s.ActivePanel == 1 {
+			s.ActivePanel = 2
+		} else {
+			s.ActivePanel = 1
+		}
 
 		// Solo actualizar los archivos cuando cambiamos del panel de directorios al panel de archivos
 		if previousPanel == 1 && s.ActivePanel == 2 {
