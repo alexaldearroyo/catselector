@@ -78,7 +78,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 	middle := renderLeft("Files")
 	right := renderLeft("Preview Subdirectories")
 
-	header += left + middle + right + "\n"
+	header += left + White.Render("│") + middle + White.Render("│") + right + "\n"
 
 	// Panel izquierdo (Directories)
 	selected := map[string]bool{}
@@ -124,6 +124,14 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 		maxLines = len(rightLines)
 	}
 
+	// Asegurarnos de que tengamos suficientes líneas para llenar el buffer
+	for maxLines < panelHeight {
+		leftLines = append(leftLines, "")
+		fileLines = append(fileLines, "")
+		rightLines = append(rightLines, "")
+		maxLines++
+	}
+
 	// Combinar las líneas horizontalmente
 	for i := 0; i < maxLines; i++ {
 		leftLine := ""
@@ -144,7 +152,8 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 		fileLine = lipgloss.PlaceHorizontal(panelWidth, lipgloss.Left, fileLine)
 		rightLine = lipgloss.PlaceHorizontal(panelWidth, lipgloss.Left, rightLine)
 
-		result.WriteString(leftLine + fileLine + rightLine + "\n")
+		// Añadir líneas verticales blancas entre los paneles
+		result.WriteString(leftLine + White.Render("│") + fileLine + White.Render("│") + rightLine + "\n")
 	}
 
 	return result.String()
