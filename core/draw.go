@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -68,7 +69,19 @@ func DrawLayout() string {
 
 	header += left + middle + right + "\n"
 
-	return header
+		// Datos para el panel izquierdo
+		items := prepareDirItems(dir)
+		selected := map[string]bool{}
+		position := 0
+		start := 0
+		_, height := getTerminalSize()
+		panelHeight := height - 5
+		active := true
+		includeSubdirs := false
+
+		leftPanel := renderLeftPanel(items, selected, dir, position, start, panelHeight, panelWidth, active, includeSubdirs)
+
+		return header + leftPanel
 }
 
 // Helper function to split directory path into multiple lines
@@ -108,4 +121,73 @@ func getCurrentDirectory() string {
 		return "/" // Return root if there's an error getting the current directory
 	}
 	return dir
+}
+
+func renderLeftPanel(items []string, selected map[string]bool, directory string, position, start, height, width int, active bool, includeSubdirs bool) string {
+	var b strings.Builder
+
+	end := start + height
+	if end > len(items) {
+		end = len(items)
+	}
+
+	for i := start; i < end; i++ {
+		item := items[i]
+		fullPath := filepath.Join(directory, item)
+		if item == ".." {
+			fullPath = filepath.Dir(directory)
+		}
+		absPath, _ := filepath.Abs(fullPath)
+		isSelected := selected[absPath]
+		hasFocus := active && i == position
+
+		marker := "  "
+		if isSelected {
+			if includeSubdirs {
+				marker = "* "
+			} else {
+				marker = "• "
+			}
+		}
+		content := marker + item
+		maxWidth := width - 3
+		if lipgloss.Width(content) > maxWidth {
+			content = content[:maxWidth-3] + "..."
+		}
+
+		icon := "📁"
+		line := icon + " " + content
+
+		// Rellenar hasta el ancho del panel
+		padding := width - lipgloss.Width(line)
+		if padding > 0 {
+			line += strings.Repeat(" ", padding)
+		}
+
+		// Estilos
+		if hasFocus {
+			b.WriteString(Inverse.Render(line) + "\n")
+		} else if isSelected {
+			b.WriteString(Selected.Render(line) + "\n")
+		} else {
+			b.WriteString(Normal.Render(line) + "\n")
+		}
+	}
+
+	// Scrollbar
+	total := len(items)
+	if total > height {
+		barX := width - 1
+		ratio := float64(start) / float64(total-height)
+		thumb := int(ratio * float64(height-1))
+		for y := 0; y < height; y++ {
+			ch := "│"
+			if y == thumb {
+				ch = "█"
+			}
+			b.WriteString(lipgloss.PlaceHorizontal(width, lipgloss.Left, strings.Repeat(" ", barX)+ch) + "\n")
+		}
+	}
+
+	return b.String()
 }

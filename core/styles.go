@@ -10,7 +10,6 @@ var (
 	// Files
 	White = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Background(lipgloss.Color("0"))
 	// Selected item
-	Selected = lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("15"))
 	// Marked items
 	Marked = lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Background(lipgloss.Color("0"))
 	// Headers
@@ -36,4 +35,11 @@ var (
 	DirectoryDir  = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Background(lipgloss.Color("0"))
 	// Title on the right (Cat Explorer)
 	HeaderTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Background(lipgloss.Color("0"))
+)
+
+
+var (
+	Inverse  = lipgloss.NewStyle().Reverse(true)
+	Selected = lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
+	Normal   = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
 )
