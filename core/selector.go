@@ -15,7 +15,8 @@ type NavigationHistory struct {
 type Selector struct {
 	Directory   string            // Directorio actual
 	ActivePanel int               // Panel activo: 1 - Directorios, 2 - Archivos, 3 - Vista previa
-	Position    int               // Posición actual
+	Position    int               // Posición actual en el panel de directorios
+	FilePosition int              // Posición actual en el panel de archivos
 	Selection   map[string]bool   // Items seleccionados
 	Filtered    []string          // Items filtrados para mostrar
 	Files       []string          // Archivos en el subdirectorio actual
@@ -24,6 +25,7 @@ type Selector struct {
 
 // Método para actualizar los archivos del directorio seleccionado
 func (s *Selector) UpdateFilesForCurrentDirectory() {
+	// Si estamos en el panel de directorios, actualizar los archivos del directorio seleccionado
 	if s.ActivePanel == 1 && s.Position < len(s.Filtered) {
 		item := s.Filtered[s.Position]
 		var dir string
@@ -49,4 +51,5 @@ func (s *Selector) UpdateFilesForCurrentDirectory() {
 			s.Files = []string{} // Si hay error, limpiamos la lista de archivos
 		}
 	}
+	// No actualizamos los archivos cuando estamos en el panel de archivos
 }

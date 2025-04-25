@@ -20,17 +20,74 @@ func CaptureInput(key string) string {
 func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
 	switch key {
 	case "down", "j":
-		position++
-		if position >= itemCount {
-			position = 0
+		if s.ActivePanel == 1 {
+			position++
+			if position >= itemCount {
+				position = 0
+			}
+		} else if s.ActivePanel == 2 {
+			s.FilePosition++
+			if s.FilePosition >= len(s.Files) {
+				s.FilePosition = 0
+			}
 		}
 	case "up", "k":
-		position--
-		if position < 0 {
-			position = itemCount - 1
+		if s.ActivePanel == 1 {
+			position--
+			if position < 0 {
+				position = itemCount - 1
+			}
+		} else if s.ActivePanel == 2 {
+			s.FilePosition--
+			if s.FilePosition < 0 {
+				s.FilePosition = len(s.Files) - 1
+			}
+		}
+	case "tab":
+		// Guardar el panel anterior
+		previousPanel := s.ActivePanel
+
+		// Cambiar entre paneles
+		s.ActivePanel = (s.ActivePanel % 3) + 1
+
+		// Solo actualizar los archivos cuando cambiamos del panel de directorios al panel de archivos
+		if previousPanel == 1 && s.ActivePanel == 2 {
+			// Si venimos del panel de directorios, actualizar los archivos del directorio seleccionado
+			if position >= 0 && position < len(items) {
+				item := items[position]
+				var selectedDir string
+				if item == ".." {
+					selectedDir = filepath.Dir(s.Directory)
+				} else if item == "." {
+					selectedDir = s.Directory
+				} else {
+					selectedDir = filepath.Join(s.Directory, item)
+				}
+
+				// Verificar si el directorio existe y es accesible
+				if info, err := os.Stat(selectedDir); err == nil && info.IsDir() {
+					// Actualizar la lista de archivos para el directorio seleccionado
+					files, err := os.ReadDir(selectedDir)
+					if err == nil {
+						var fileList []string
+						for _, file := range files {
+							if !file.IsDir() { // Solo archivos
+								fileList = append(fileList, file.Name())
+							}
+						}
+						s.Files = fileList // Actualizamos los archivos
+						s.FilePosition = 0 // Resetear la posición en el panel de archivos
+					} else {
+						s.Files = []string{} // Si hay error, limpiamos la lista de archivos
+					}
+				}
+			}
+		} else if s.ActivePanel == 2 && len(s.Files) > 0 {
+			// Si ya estamos en el panel de archivos, solo resetear la posición
+			s.FilePosition = 0
 		}
 	case "enter", "l":
-		if position >= 0 && position < len(items) {
+		if s.ActivePanel == 1 && position >= 0 && position < len(items) {
 			item := items[position]
 			var newDir string
 			if item == ".." {

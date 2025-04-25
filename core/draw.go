@@ -11,7 +11,7 @@ import (
 	"golang.org/x/term"
 )
 
-func DrawLayout(position int, items []string, currentDir string, files []string) string {
+func DrawLayout(position int, items []string, currentDir string, files []string, activePanel int, filePosition int) string {
 	width, height := getTerminalSize()
 	dirPrefix := "Directory: "
 	titleText := "Cat Explorer"
@@ -76,7 +76,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 
 	left := renderLeft("Directories")
 	middle := renderLeft("Files")
-	right := renderLeft("Preview Subdirectories")
+	right := renderLeft("Preview")
 
 	header += left + White.Render("│") + middle + White.Render("│") + right + "\n"
 
@@ -84,27 +84,16 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 	selected := map[string]bool{}
 	start := 0
 	panelHeight := height - 5
-	active := true
+	active := activePanel == 1
 	includeSubdirs := false
 
 	leftPanel := renderLeftPanel(items, selected, currentDir, position, start, panelHeight, panelWidth, active, includeSubdirs)
 
 	// Panel de archivos (Files)
-	filePanel := renderFilePanel(files, position, panelWidth, height, panelHeight)
+	filePanel := renderFilePanel(files, position, panelWidth, height, panelHeight, activePanel, filePosition)
 
-	// Panel derecho (Preview Subdirectories)
-	var selectedDir string
-	if position < len(items) {
-		item := items[position]
-		if item == ".." {
-			selectedDir = filepath.Dir(currentDir)
-		} else if item == "." {
-			selectedDir = currentDir
-		} else {
-			selectedDir = filepath.Join(currentDir, item)
-		}
-	}
-	rightPanel := renderPreviewPanel(selectedDir, panelWidth, panelHeight)
+	// Panel derecho (Preview)
+	rightPanel := renderPreviewPanel(currentDir, panelWidth, panelHeight, files, filePosition, activePanel, items, position)
 
 	// Combinar los paneles horizontalmente
 	var result strings.Builder
@@ -124,7 +113,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 		maxLines = len(rightLines)
 	}
 
-	// Asegurarnos de que tengamos suficientes líneas para llenar el buffer
+	// Asegurarnos de que tengamos suficientes líneas
 	for maxLines < panelHeight {
 		leftLines = append(leftLines, "")
 		fileLines = append(fileLines, "")
@@ -160,7 +149,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 }
 
 // Esta función debería manejar el renderizado de los archivos
-func renderFilePanel(files []string, position, panelWidth, height, panelHeight int) string {
+func renderFilePanel(files []string, position, panelWidth, height, panelHeight int, activePanel int, filePosition int) string {
 	var b strings.Builder
 
 	for i := 0; i < panelHeight && i < len(files); i++ {
@@ -185,51 +174,105 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 			}
 		}
 
-		// Solo usar el estilo White para los archivos
-		b.WriteString(White.Render(line) + "\n")
+		// Aplicar el estilo Focus si el panel está activo y este es el archivo seleccionado
+		if activePanel == 2 && i == filePosition {
+			b.WriteString(Focus.Render(line) + "\n")
+		} else {
+			b.WriteString(White.Render(line) + "\n")
+		}
 	}
 
 	return b.String()
 }
 
-// renderPreviewPanel muestra los subdirectorios del directorio seleccionado
-func renderPreviewPanel(dir string, width, height int) string {
+// renderPreviewPanel muestra el contenido del archivo seleccionado o los subdirectorios
+func renderPreviewPanel(dir string, width, height int, files []string, filePosition int, activePanel int, items []string, position int) string {
 	var b strings.Builder
 
-	// Verificar si el directorio existe y es accesible
-	info, err := os.Stat(dir)
-	if err != nil || !info.IsDir() {
-		return strings.Repeat(" ", width) + "\n"
-	}
-
-	// Leer los subdirectorios
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return strings.Repeat(" ", width) + "\n"
-	}
-
-	// Filtrar solo directorios y ordenarlos
-	var subdirs []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			subdirs = append(subdirs, entry.Name())
-		}
-	}
-	sort.Strings(subdirs)
-
-	// Mostrar los subdirectorios
-	for i := 0; i < height && i < len(subdirs); i++ {
-		subdir := subdirs[i]
-		icon := GetFileIcon(filepath.Join(dir, subdir))
-		line := icon + "  " + subdir
-
-		// Rellenar hasta el ancho del panel
-		padding := width - lipgloss.Width(line)
-		if padding > 0 {
-			line += strings.Repeat(" ", padding)
+	// Si el panel activo es el de directorios, mostrar subdirectorios
+	if activePanel == 1 {
+		// Determinar el directorio seleccionado
+		var selectedDir string
+		if position >= 0 && position < len(items) {
+			item := items[position]
+			if item == ".." {
+				selectedDir = filepath.Dir(dir)
+			} else if item == "." {
+				selectedDir = dir
+			} else {
+				selectedDir = filepath.Join(dir, item)
+			}
+		} else {
+			selectedDir = dir
 		}
 
-		b.WriteString(Green.Render(line) + "\n")
+		// Verificar si el directorio existe y es accesible
+		info, err := os.Stat(selectedDir)
+		if err != nil || !info.IsDir() {
+			return strings.Repeat(" ", width) + "\n"
+		}
+
+		// Leer los subdirectorios
+		entries, err := os.ReadDir(selectedDir)
+		if err != nil {
+			return strings.Repeat(" ", width) + "\n"
+		}
+
+		// Filtrar solo directorios y ordenarlos
+		var subdirs []string
+		for _, entry := range entries {
+			if entry.IsDir() {
+				subdirs = append(subdirs, entry.Name())
+			}
+		}
+		sort.Strings(subdirs)
+
+		// Mostrar los subdirectorios
+		for i := 0; i < height && i < len(subdirs); i++ {
+			subdir := subdirs[i]
+			icon := GetFileIcon(filepath.Join(selectedDir, subdir))
+			line := icon + "  " + subdir
+
+			// Rellenar hasta el ancho del panel
+			padding := width - lipgloss.Width(line)
+			if padding > 0 {
+				line += strings.Repeat(" ", padding)
+			}
+
+			b.WriteString(Green.Render(line) + "\n")
+		}
+	} else {
+		// Si estamos en el panel de archivos, mostrar el contenido del archivo seleccionado
+		if len(files) > 0 && filePosition >= 0 && filePosition < len(files) {
+			filePath := filepath.Join(dir, files[filePosition])
+
+			// Leer el contenido del archivo
+			content, err := os.ReadFile(filePath)
+			if err == nil {
+				// Convertir el contenido a string y limitar a las primeras líneas que quepan
+				lines := strings.Split(string(content), "\n")
+				for i := 0; i < height && i < len(lines); i++ {
+					line := lines[i]
+
+					// Truncar la línea si es demasiado larga
+					if lipgloss.Width(line) > width {
+						line = line[:width-3] + "..."
+					}
+
+					// Rellenar hasta el ancho del panel
+					padding := width - lipgloss.Width(line)
+					if padding > 0 {
+						line += strings.Repeat(" ", padding)
+					}
+
+					b.WriteString(White.Render(line) + "\n")
+				}
+			} else {
+				b.WriteString(White.Render("No se puede leer el archivo") + "\n")
+			}
+		} else {
+			b.WriteString(White.Render("No hay archivo seleccionado") + "\n")
+		}
 	}
 
 	return b.String()

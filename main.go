@@ -80,12 +80,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		// El manejo de las teclas ya se hace en input.go.
+		oldPosition := m.position
 		m.position = core.HandleKeyPress(msg.String(), m.position, len(m.items), m.selected, m.items, &m.selector)
 
 		// Sincronizar el estado del selector con el modelo
 		m.selector.Position = m.position
 		m.selector.Selection = m.selected
 		m.items = m.selector.Filtered // Actualizar los items del modelo con los filtrados
+
+		// Si la posición cambió en el panel de directorios, actualizar los archivos
+		if oldPosition != m.position && m.selector.ActivePanel == 1 {
+			m.selector.UpdateFilesForCurrentDirectory()
+		}
 	}
 	return m, nil
 }
@@ -100,5 +106,5 @@ func (m model) View() string {
 	files := m.selector.Files
 
 	// Renderizar la vista con los archivos actualizados
-	return core.DrawLayout(m.position, items, dir, files)
+	return core.DrawLayout(m.position, items, dir, files, m.selector.ActivePanel, m.selector.FilePosition)
 }
