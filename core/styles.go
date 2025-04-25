@@ -10,7 +10,7 @@ var (
 	// Panel Headers
 	Cyan = lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Background(lipgloss.Color("0"))
 	// Files
-	White = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Background(lipgloss.Color("0"))
+	White = lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Background(lipgloss.Color("0"))
 	// Selected item
 	// Marked items
 	Marked = lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Background(lipgloss.Color("0"))

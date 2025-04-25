@@ -129,42 +129,16 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 
 	for i := 0; i < panelHeight && i < len(files); i++ {
 		file := files[i]
-		hasFocus := i == position
-		icon := "📄"
+		icon := GetFileIcon(file)
 		line := icon + " " + file
 
-		// Estilos
-		if hasFocus {
-			b.WriteString(Focus.Render(line) + "\n")
-		} else {
-			b.WriteString(White.Render(line) + "\n")
-		}
+		// Solo usar el estilo White para los archivos
+		b.WriteString(White.Render(line) + "\n")
 	}
 
 	return b.String()
 }
 
-
-// Helper function to split directory path into multiple lines
-func splitDirectory(dir string, maxWidth int) []string {
-	var parts []string
-	current := dir
-
-	for len(current) > maxWidth {
-		// Find the last separator before maxWidth
-		splitIndex := strings.LastIndex(current[:maxWidth], "/")
-		if splitIndex == -1 {
-			splitIndex = maxWidth - 1
-		}
-		parts = append(parts, current[:splitIndex+1])
-		current = current[splitIndex+1:]
-	}
-	if len(current) > 0 {
-		parts = append(parts, current)
-	}
-
-	return parts
-}
 
 // Get the terminal size
 func getTerminalSize() (int, int) {
@@ -208,7 +182,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 			content = content[:maxWidth-3] + "..."
 		}
 
-		icon := "📁"
+		icon := GetFileIcon(fullPath)
 		line := icon + content
 
 		// Rellenar hasta el ancho del panel
