@@ -27,7 +27,7 @@ var (
 
 // RenderLayout renderiza todo el layout de la aplicación
 func RenderLayout(m Model) string {
-	width, height := 100, 30 // Valores por defecto, idealmente obtenerlos del terminal real
+	width, height := m.width, m.height // Usar tamaño real del terminal
 
 	// Calcular dimensiones de los paneles
 	leftPanelWidth := width / 3
@@ -265,7 +265,22 @@ func renderDirectoriesPanel(m Model, dirDisplayItems []string, leftPanelWidth in
 		}
 	}
 
-	// TODO: Añadir scrollbar para directorios si es necesario
+	// Añadir scrollbar para directorios
+	total := len(dirDisplayItems)
+	if total > panelHeight {
+		ratio := float64(m.windowStart) / float64(total-panelHeight)
+		thumb := int(ratio * float64(panelHeight-1))
+
+		scrollbar := ""
+		for y := 0; y < panelHeight; y++ {
+			ch := "│"
+			if y == thumb {
+				ch = "█"
+			}
+			scrollbar += "\n" + lipgloss.PlaceHorizontal(leftPanelWidth, lipgloss.Right, ch)
+		}
+		dirContent += scrollbar
+	}
 
 	return dirContent
 }
@@ -306,7 +321,22 @@ func renderFilesPanel(m Model, leftPanelWidth, middlePanelWidth, panelHeight, he
 		}
 	}
 
-	// TODO: Añadir scrollbar para archivos si es necesario
+	// Añadir scrollbar para archivos
+	total := len(m.files)
+	if total > panelHeight {
+		ratio := float64(m.windowStart) / float64(total-panelHeight)
+		thumb := int(ratio * float64(panelHeight-1))
+
+		scrollbar := ""
+		for y := 0; y < panelHeight; y++ {
+			ch := "│"
+			if y == thumb {
+				ch = "█"
+			}
+			scrollbar += "\n" + lipgloss.PlaceHorizontal(leftPanelWidth+middlePanelWidth, lipgloss.Right, ch)
+		}
+		fileContent += scrollbar
+	}
 
 	return fileContent
 }
@@ -372,19 +402,102 @@ func renderPreviewPanel(m Model, leftPanelWidth, middlePanelWidth, rightPanelWid
 		}
 	}
 
-	// TODO: Añadir scrollbar para preview si es necesario
+	// Añadir scrollbar para preview
+	total := len(m.previewContent)
+	if total > panelHeight {
+		ratio := float64(m.previewWindowStart) / float64(total-panelHeight)
+		thumb := int(ratio * float64(panelHeight-1))
+
+		scrollbar := ""
+		for y := 0; y < panelHeight; y++ {
+			ch := "│"
+			if y == thumb {
+				ch = "█"
+			}
+			scrollbar += "\n" + lipgloss.PlaceHorizontal(leftPanelWidth+middlePanelWidth+rightPanelWidth-1, lipgloss.Right, ch)
+		}
+		previewContent += scrollbar
+	}
 
 	return previewContent
 }
 
 func renderItemCounts(m Model, leftPanelWidth, middlePanelWidth, rightPanelWidth, headerLinesUsed int) string {
-	// Aquí implementaríamos la lógica de contadores como en el original
-	// Por simplicidad, mostramos valores de ejemplo
-	dirCountDisplay := infoCountStyle.Render("10 items")
-	fileCountDisplay := infoCountStyle.Render("5 files")
-	previewCountDisplay := infoCountStyle.Render("3 subdirs")
+	// Calcular contadores reales basados en los datos del modelo
+	var dirCountDisplay, fileCountDisplay, previewCountDisplay string
 
-	// TODO: Calcular contadores reales basados en los datos del modelo
+	// Para panel de directorios
+	if m.activePanel == directoriesPanel {
+		currentDir := m.directory
+		dirCount, fileCount, err := m.CountDirItems(currentDir)
+		if err != nil {
+			dirCountDisplay = infoCountStyle.Render("Error")
+		} else {
+			totalItems := dirCount + fileCount
+			dirCountDisplay = infoCountStyle.Render(fmt.Sprintf("%d items", totalItems))
+		}
+	} else if m.activePanel == previewPanel {
+		if m.currentPreviewDirectory != "" {
+			dirCount, fileCount, err := m.CountDirItems(m.currentPreviewDirectory)
+			if err != nil {
+				dirCountDisplay = infoCountStyle.Render("Error")
+			} else {
+				totalItems := dirCount + fileCount
+				dirCountDisplay = infoCountStyle.Render(fmt.Sprintf("%d items", totalItems))
+			}
+		} else {
+			dirCountDisplay = infoCountStyle.Render("N/A")
+		}
+	} else {
+		dirCount, fileCount, err := m.CountDirItems(m.directory)
+		if err != nil {
+			dirCountDisplay = infoCountStyle.Render("Error")
+		} else {
+			totalItems := dirCount + fileCount
+			dirCountDisplay = infoCountStyle.Render(fmt.Sprintf("%d items", totalItems))
+		}
+	}
+
+	// Para panel de archivos
+	fileDir := m.directory
+	if m.currentPreviewDirectory != "" {
+		fileDir = m.currentPreviewDirectory
+	}
+
+	_, fileCount, err := m.CountDirItems(fileDir)
+	if err != nil {
+		fileCountDisplay = infoCountStyle.Render("Error")
+	} else {
+		fileCountDisplay = infoCountStyle.Render(fmt.Sprintf("%d files", fileCount))
+	}
+
+	// Para panel de vista previa
+	switch m.activePanel {
+	case directoriesPanel:
+		if m.position < len(m.directories) {
+			previewDir := m.currentPreviewDirectory
+			if previewDir != "" {
+				dirCount, _, err := m.CountDirItems(previewDir)
+				if err != nil {
+					previewCountDisplay = infoCountStyle.Render("Access error")
+				} else {
+					previewCountDisplay = infoCountStyle.Render(fmt.Sprintf("%d subdirs", dirCount))
+				}
+			} else {
+				previewCountDisplay = infoCountStyle.Render("N/A")
+			}
+		} else {
+			previewCountDisplay = infoCountStyle.Render("N/A")
+		}
+	case filesPanel:
+		if m.position < len(m.files) {
+			previewCountDisplay = infoCountStyle.Render(fmt.Sprintf("File: %s", m.files[m.position]))
+		} else {
+			previewCountDisplay = infoCountStyle.Render("No file")
+		}
+	default:
+		previewCountDisplay = infoCountStyle.Render("Preview")
+	}
 
 	itemCounts := lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.PlaceHorizontal(leftPanelWidth, lipgloss.Left, dirCountDisplay),
@@ -422,8 +535,12 @@ func renderKeybindings(m Model, width int, separatorY int) string {
 		}
 	}
 
-	// Creamos la variable pero la usamos directamente
-	footer := keyBindingsText
+	// Mostrar información de selección
+	selectedFilesCount, selectedDirsCount := m.CountSelectedItems()
+	selectionInfo := fmt.Sprintf("Selected: %d Files, %d Directories", selectedFilesCount, selectedDirsCount)
+
+	// Crear texto del footer
+	footer := keyBindingsText + "\n" + keyHintTextStyle.Render(selectionInfo)
 
 	if m.statusMessage != "" && time.Now().Unix() - m.statusTime < 2 {
 		footer += "\n" + markedItemStyle.Render(m.statusMessage)
