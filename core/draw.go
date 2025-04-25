@@ -525,7 +525,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 
 		marker := "  "
 		if isSelected {
-			marker = " *"
+			marker = " •"
 		}
 		content := marker + item
 		maxWidth := width - 3

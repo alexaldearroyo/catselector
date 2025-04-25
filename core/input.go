@@ -200,7 +200,68 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			s.Selection[selectedFile] = !s.Selection[selectedFile]
 		}
 	case "a":
-		if s.ActivePanel == 2 {
+		if s.ActivePanel == 1 {
+			// Verificar si todos los directorios están seleccionados
+			allSelected := true
+			for _, item := range items {
+				if !s.Selection[item] {
+					allSelected = false
+					break
+				}
+			}
+
+			// Si todos están seleccionados, deseleccionar todos
+			// Si no todos están seleccionados, seleccionar todos
+			for _, item := range items {
+				s.Selection[item] = !allSelected
+
+				// Si estamos seleccionando, también seleccionar los archivos del directorio
+				if s.Selection[item] {
+					var dir string
+					if item == ".." {
+						dir = filepath.Dir(s.Directory)
+					} else if item == "." {
+						dir = s.Directory
+					} else {
+						dir = filepath.Join(s.Directory, item)
+					}
+
+					// Verificar si el directorio existe y es accesible
+					if info, err := os.Stat(dir); err == nil && info.IsDir() {
+						files, err := os.ReadDir(dir)
+						if err == nil {
+							for _, file := range files {
+								if !file.IsDir() { // Solo archivos
+									s.Selection[file.Name()] = true
+								}
+							}
+						}
+					}
+				} else {
+					// Si estamos deseleccionando, también deseleccionar los archivos del directorio
+					var dir string
+					if item == ".." {
+						dir = filepath.Dir(s.Directory)
+					} else if item == "." {
+						dir = s.Directory
+					} else {
+						dir = filepath.Join(s.Directory, item)
+					}
+
+					// Verificar si el directorio existe y es accesible
+					if info, err := os.Stat(dir); err == nil && info.IsDir() {
+						files, err := os.ReadDir(dir)
+						if err == nil {
+							for _, file := range files {
+								if !file.IsDir() { // Solo archivos
+									s.Selection[file.Name()] = false
+								}
+							}
+						}
+					}
+				}
+			}
+		} else if s.ActivePanel == 2 {
 			// Verificar si todos los archivos están seleccionados
 			allSelected := true
 			for _, file := range s.Files {
