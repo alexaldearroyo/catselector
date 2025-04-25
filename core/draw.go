@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -241,18 +242,62 @@ func renderPreviewPanel(dir string, width, height int, files []string, filePosit
 
 			b.WriteString(Green.Render(line) + "\n")
 		}
+
+		// Rellenar con líneas vacías si es necesario
+		for i := len(subdirs); i < height; i++ {
+			b.WriteString(strings.Repeat(" ", width) + "\n")
+		}
 	} else {
 		// Si estamos en el panel de archivos, mostrar el contenido del archivo seleccionado
 		if len(files) > 0 && filePosition >= 0 && filePosition < len(files) {
-			filePath := filepath.Join(dir, files[filePosition])
+			// Determinar el directorio actual para los archivos
+			var currentDir string
+			if position >= 0 && position < len(items) {
+				item := items[position]
+				if item == ".." {
+					currentDir = filepath.Dir(dir)
+				} else if item == "." {
+					currentDir = dir
+				} else {
+					currentDir = filepath.Join(dir, item)
+				}
+			} else {
+				currentDir = dir
+			}
+
+			filePath := filepath.Join(currentDir, files[filePosition])
+
+			// Verificar si el archivo es binario o demasiado grande
+			info, err := os.Stat(filePath)
+			if err != nil {
+				// Error al acceder al archivo
+				showErrorMessage(&b, "No se puede acceder al archivo", filePath, width, height)
+				return b.String()
+			}
+
+			// Verificar si es un archivo binario o demasiado grande
+			if isBinaryFile(filePath) || info.Size() > 1024*1024 { // Más de 1MB
+				showBinaryFileMessage(&b, filePath, info.Size(), width, height)
+				return b.String()
+			}
 
 			// Leer el contenido del archivo
 			content, err := os.ReadFile(filePath)
 			if err == nil {
 				// Convertir el contenido a string y limitar a las primeras líneas que quepan
 				lines := strings.Split(string(content), "\n")
-				for i := 0; i < height && i < len(lines); i++ {
+
+				// Limitar el número de líneas para evitar desbordamientos
+				maxLines := height
+				if len(lines) > maxLines {
+					lines = lines[:maxLines]
+				}
+
+				for i := 0; i < len(lines); i++ {
 					line := lines[i]
+
+					// Sanitizar la línea para evitar caracteres problemáticos
+					line = sanitizeLine(line)
 
 					// Truncar la línea si es demasiado larga
 					if lipgloss.Width(line) > width {
@@ -267,15 +312,162 @@ func renderPreviewPanel(dir string, width, height int, files []string, filePosit
 
 					b.WriteString(White.Render(line) + "\n")
 				}
+
+				// Rellenar con líneas vacías si es necesario
+				for i := len(lines); i < height; i++ {
+					b.WriteString(strings.Repeat(" ", width) + "\n")
+				}
 			} else {
-				b.WriteString(White.Render("No se puede leer el archivo") + "\n")
+				// Error al leer el archivo
+				showErrorMessage(&b, "No se puede leer el archivo", filePath, width, height)
 			}
 		} else {
-			b.WriteString(White.Render("No hay archivo seleccionado") + "\n")
+			// Mensaje cuando no hay archivo seleccionado
+			msg := "No hay archivo seleccionado"
+			padding := width - lipgloss.Width(msg)
+			if padding > 0 {
+				msg += strings.Repeat(" ", padding)
+			}
+			b.WriteString(White.Render(msg) + "\n")
+
+			// Rellenar con líneas vacías
+			for i := 1; i < height; i++ {
+				b.WriteString(strings.Repeat(" ", width) + "\n")
+			}
 		}
 	}
 
 	return b.String()
+}
+
+// isBinaryFile verifica si un archivo es binario
+func isBinaryFile(filePath string) bool {
+	// Abrir el archivo
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	// Leer los primeros 1024 bytes
+	buf := make([]byte, 1024)
+	n, err := file.Read(buf)
+	if err != nil && err != io.EOF {
+		return false
+	}
+
+	// Verificar si contiene caracteres nulos o demasiados caracteres no imprimibles
+	nullCount := 0
+	nonPrintableCount := 0
+	for i := 0; i < n; i++ {
+		if buf[i] == 0 {
+			nullCount++
+		}
+		if buf[i] < 32 && buf[i] != '\t' && buf[i] != '\n' && buf[i] != '\r' {
+			nonPrintableCount++
+		}
+	}
+
+	// Si hay más de 10 caracteres nulos o más del 30% son no imprimibles, considerarlo binario
+	return nullCount > 10 || float64(nonPrintableCount)/float64(n) > 0.3
+}
+
+// showErrorMessage muestra un mensaje de error formateado
+func showErrorMessage(b *strings.Builder, prefix, filePath string, width, height int) {
+	// Mensaje de error más informativo pero seguro
+	errorMsg := prefix
+	if len(filePath) > width-20 {
+		errorMsg += ": " + filePath[:width-25] + "..."
+	} else {
+		errorMsg += ": " + filePath
+	}
+
+	// Asegurar que el mensaje no exceda el ancho del panel
+	if lipgloss.Width(errorMsg) > width {
+		errorMsg = errorMsg[:width-3] + "..."
+	}
+
+	// Rellenar hasta el ancho del panel
+	padding := width - lipgloss.Width(errorMsg)
+	if padding > 0 {
+		errorMsg += strings.Repeat(" ", padding)
+	}
+
+	b.WriteString(White.Render(errorMsg) + "\n")
+
+	// Rellenar con líneas vacías
+	for i := 1; i < height; i++ {
+		b.WriteString(strings.Repeat(" ", width) + "\n")
+	}
+}
+
+// showBinaryFileMessage muestra un mensaje para archivos binarios
+func showBinaryFileMessage(b *strings.Builder, filePath string, size int64, width, height int) {
+	// Crear un mensaje informativo
+	sizeStr := formatFileSize(size)
+
+	// Primera línea: nombre del archivo
+	line1 := "Binary file"
+	if lipgloss.Width(line1) > width {
+		line1 = line1[:width-3] + "..."
+	}
+	padding1 := width - lipgloss.Width(line1)
+	if padding1 > 0 {
+		line1 += strings.Repeat(" ", padding1)
+	}
+	b.WriteString(White.Render(line1) + "\n")
+
+	// Segunda línea: tamaño del archivo
+	line2 := "Size: " + sizeStr
+	padding2 := width - lipgloss.Width(line2)
+	if padding2 > 0 {
+		line2 += strings.Repeat(" ", padding2)
+	}
+	b.WriteString(White.Render(line2) + "\n")
+
+	// Tercera línea: mensaje informativo
+	line3 := "Preview not available"
+	padding3 := width - lipgloss.Width(line3)
+	if padding3 > 0 {
+		line3 += strings.Repeat(" ", padding3)
+	}
+	b.WriteString(White.Render(line3) + "\n")
+
+	// Rellenar con líneas vacías
+	for i := 3; i < height; i++ {
+		b.WriteString(strings.Repeat(" ", width) + "\n")
+	}
+}
+
+// formatFileSize formatea el tamaño de un archivo en una cadena legible
+func formatFileSize(size int64) string {
+	const unit = 1024
+	if size < unit {
+		return fmt.Sprintf("%d B", size)
+	}
+
+	div, exp := int64(unit), 0
+	for n := size / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+
+	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
+}
+
+// sanitizeLine elimina caracteres problemáticos de una línea
+func sanitizeLine(line string) string {
+	// Reemplazar caracteres de control y otros caracteres problemáticos
+	var result strings.Builder
+	for _, r := range line {
+		if r < 32 && r != '\t' && r != '\n' && r != '\r' {
+			// Reemplazar caracteres de control con un espacio
+			result.WriteRune(' ')
+		} else {
+			result.WriteRune(r)
+		}
+	}
+	return result.String()
 }
 
 // Get the terminal size
