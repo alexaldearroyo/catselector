@@ -130,7 +130,7 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 	for i := 0; i < panelHeight && i < len(files); i++ {
 		file := files[i]
 		icon := GetFileIcon(file)
-		line := icon + " " + file
+		line := icon + "  " + file
 
 		// Solo usar el estilo White para los archivos
 		b.WriteString(White.Render(line) + "\n")
