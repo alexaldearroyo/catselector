@@ -159,6 +159,23 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 		icon := GetFileIcon(file)
 		line := icon + "  " + file
 
+		// Truncar el nombre del archivo si es demasiado largo
+		maxWidth := panelWidth - 2 // Dejamos espacio para el scrollbar
+		if lipgloss.Width(line) > maxWidth {
+			// Calcular cuánto espacio tenemos para el nombre del archivo
+			iconWidth := lipgloss.Width(icon + "  ")
+			availableWidth := maxWidth - iconWidth - 3 // 3 para "..."
+
+			// Truncar el nombre del archivo
+			if availableWidth > 0 {
+				truncatedName := file
+				if len(truncatedName) > availableWidth {
+					truncatedName = truncatedName[:availableWidth] + "..."
+				}
+				line = icon + "  " + truncatedName
+			}
+		}
+
 		// Solo usar el estilo White para los archivos
 		b.WriteString(White.Render(line) + "\n")
 	}
@@ -269,20 +286,6 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 		}
 	}
 
-	// Scrollbar
-	total := len(items)
-	if total > height {
-		barX := width - 1
-		ratio := float64(start) / float64(total-height)
-		thumb := int(ratio * float64(height-1))
-		for y := 0; y < height; y++ {
-			ch := "│"
-			if y == thumb {
-				ch = "█"
-			}
-			b.WriteString(lipgloss.PlaceHorizontal(width, lipgloss.Left, strings.Repeat(" ", barX)+ch) + "\n")
-		}
-	}
 
 	return b.String()
 }
