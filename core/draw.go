@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -91,8 +92,19 @@ func DrawLayout(position int, items []string, currentDir string, files []string)
 	// Panel de archivos (Files)
 	filePanel := renderFilePanel(files, position, panelWidth, height, panelHeight)
 
-	// Panel derecho (Preview)
-	rightPanel := strings.Repeat(" ", panelWidth) + "\n"
+	// Panel derecho (Preview Subdirectories)
+	var selectedDir string
+	if position < len(items) {
+		item := items[position]
+		if item == ".." {
+			selectedDir = filepath.Dir(currentDir)
+		} else if item == "." {
+			selectedDir = currentDir
+		} else {
+			selectedDir = filepath.Join(currentDir, item)
+		}
+	}
+	rightPanel := renderPreviewPanel(selectedDir, panelWidth, panelHeight)
 
 	// Combinar los paneles horizontalmente
 	var result strings.Builder
@@ -154,6 +166,48 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 	return b.String()
 }
 
+// renderPreviewPanel muestra los subdirectorios del directorio seleccionado
+func renderPreviewPanel(dir string, width, height int) string {
+	var b strings.Builder
+
+	// Verificar si el directorio existe y es accesible
+	info, err := os.Stat(dir)
+	if err != nil || !info.IsDir() {
+		return strings.Repeat(" ", width) + "\n"
+	}
+
+	// Leer los subdirectorios
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return strings.Repeat(" ", width) + "\n"
+	}
+
+	// Filtrar solo directorios y ordenarlos
+	var subdirs []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subdirs = append(subdirs, entry.Name())
+		}
+	}
+	sort.Strings(subdirs)
+
+	// Mostrar los subdirectorios
+	for i := 0; i < height && i < len(subdirs); i++ {
+		subdir := subdirs[i]
+		icon := GetFileIcon(filepath.Join(dir, subdir))
+		line := icon + "  " + subdir
+
+		// Rellenar hasta el ancho del panel
+		padding := width - lipgloss.Width(line)
+		if padding > 0 {
+			line += strings.Repeat(" ", padding)
+		}
+
+		b.WriteString(Green.Render(line) + "\n")
+	}
+
+	return b.String()
+}
 
 // Get the terminal size
 func getTerminalSize() (int, int) {
@@ -163,7 +217,6 @@ func getTerminalSize() (int, int) {
 	}
 	return width, height
 }
-
 
 func renderLeftPanel(items []string, selected map[string]bool, directory string, position, start, height, width int, active bool, includeSubdirs bool) string {
 	var b strings.Builder
