@@ -43,6 +43,12 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 
 			// Verificar si el directorio existe y es accesible
 			if info, err := os.Stat(newDir); err == nil && info.IsDir() {
+				// Guardar el estado actual en el historial antes de cambiar
+				s.History = append(s.History, NavigationHistory{
+					Directory: s.Directory,
+					Position:  position,
+				})
+
 				s.Directory = newDir
 				s.Position = 0
 				s.Filtered = PrepareDirItems(newDir)
@@ -53,18 +59,20 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 	case "esc", "h":
 		// Navegar hacia atrás si no estamos en el directorio raíz de la aplicación
 		rootDir := GetRootDirectory()
-		if s.Directory != rootDir {
-			parentDir := filepath.Dir(s.Directory)
-			// Verificar si el directorio padre existe, es accesible y no está antes del directorio raíz
-			if info, err := os.Stat(parentDir); err == nil && info.IsDir() {
-				// Verificar que no estamos intentando navegar antes del directorio raíz
-				if len(parentDir) >= len(rootDir) {
-					s.Directory = parentDir
-					s.Position = 0
-					s.Filtered = PrepareDirItems(parentDir)
-					position = 0
-					items = s.Filtered // Actualizar los items con los nuevos
-				}
+		if s.Directory != rootDir && len(s.History) > 0 {
+			// Obtener el último estado del historial
+			lastState := s.History[len(s.History)-1]
+
+			// Verificar si el directorio del historial existe y es accesible
+			if info, err := os.Stat(lastState.Directory); err == nil && info.IsDir() {
+				s.Directory = lastState.Directory
+				s.Filtered = PrepareDirItems(lastState.Directory)
+				position = lastState.Position
+				s.Position = lastState.Position
+				items = s.Filtered
+
+				// Eliminar el último estado del historial
+				s.History = s.History[:len(s.History)-1]
 			}
 		}
 	}

@@ -5,6 +5,12 @@ import (
 	"path/filepath"
 )
 
+// Estructura para mantener el historial de navegación
+type NavigationHistory struct {
+	Directory string
+	Position  int
+}
+
 // Estructura Selector con los campos necesarios
 type Selector struct {
 	Directory   string            // Directorio actual
@@ -13,6 +19,7 @@ type Selector struct {
 	Selection   map[string]bool   // Items seleccionados
 	Filtered    []string          // Items filtrados para mostrar
 	Files       []string          // Archivos en el subdirectorio actual
+	History     []NavigationHistory // Historial de navegación
 }
 
 // Método para actualizar los archivos del directorio seleccionado
