@@ -156,17 +156,15 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 func renderFilePanel(files []string, position, panelWidth, height, panelHeight int, activePanel int, filePosition int) string {
 	var b strings.Builder
 
+	// Obtener el selector actual
+	selector := GetCurrentSelector()
+
 	for i := 0; i < panelHeight && i < len(files); i++ {
 		file := files[i]
 		icon := GetFileIcon(file)
 
-		// Verificar si el archivo está seleccionado
-		isSelected := false
-		if activePanel == 2 {
-			// Obtener el selector del modelo actual
-			selector := GetCurrentSelector()
-			isSelected = selector.Selection[file]
-		}
+		// Verificar si el archivo está seleccionado usando el mapa Selection del selector
+		isSelected := selector.Selection[file]
 
 		// Añadir asterisco si está seleccionado
 		marker := "  "
@@ -513,23 +511,21 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 		end = len(items)
 	}
 
+	// Obtener el selector actual
+	selector := GetCurrentSelector()
+
 	for i := start; i < end; i++ {
 		item := items[i]
 		fullPath := filepath.Join(directory, item)
 		if item == ".." {
 			fullPath = filepath.Dir(directory)
 		}
-		absPath, _ := filepath.Abs(fullPath)
-		isSelected := selected[absPath]
+		isSelected := selector.Selection[item]
 		hasFocus := active && i == position
 
 		marker := "  "
 		if isSelected {
-			if includeSubdirs {
-				marker = "* "
-			} else {
-				marker = "• "
-			}
+			marker = " *"
 		}
 		content := marker + item
 		maxWidth := width - 3
@@ -550,12 +546,11 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 		if hasFocus {
 			b.WriteString(Focus.Render(line) + "\n")
 		} else if isSelected {
-			b.WriteString(Selected.Render(line) + "\n")
+			b.WriteString(Yellow.Render(line) + "\n")
 		} else {
 			b.WriteString(Green.Render(line) + "\n")
 		}
 	}
-
 
 	return b.String()
 }

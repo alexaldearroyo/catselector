@@ -145,7 +145,55 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			}
 		}
 	case "s":
-		if s.ActivePanel == 2 && s.FilePosition >= 0 && s.FilePosition < len(s.Files) {
+		if s.ActivePanel == 1 && position >= 0 && position < len(items) {
+			// Obtener el directorio seleccionado
+			item := items[position]
+			var selectedDir string
+			if item == ".." {
+				selectedDir = filepath.Dir(s.Directory)
+			} else if item == "." {
+				selectedDir = s.Directory
+			} else {
+				selectedDir = filepath.Join(s.Directory, item)
+			}
+
+			// Verificar si el directorio existe y es accesible
+			if info, err := os.Stat(selectedDir); err == nil && info.IsDir() {
+				// Cambiar el estado de selección del directorio
+				s.Selection[item] = !s.Selection[item]
+
+				// Si el directorio está seleccionado, seleccionar todos sus archivos
+				if s.Selection[item] {
+					// Actualizar la lista de archivos para el directorio seleccionado
+					files, err := os.ReadDir(selectedDir)
+					if err == nil {
+						var fileList []string
+						for _, file := range files {
+							if !file.IsDir() { // Solo archivos
+								fileList = append(fileList, file.Name())
+								s.Selection[file.Name()] = true
+							}
+						}
+						s.Files = fileList // Actualizamos los archivos
+					}
+				} else {
+					// Si se deselecciona el directorio, deseleccionar todos sus archivos
+					files, err := os.ReadDir(selectedDir)
+					if err == nil {
+						for _, file := range files {
+							if !file.IsDir() { // Solo archivos
+								s.Selection[file.Name()] = false
+							}
+						}
+					}
+					// Limpiar la lista de archivos
+					s.Files = []string{}
+				}
+
+				// Forzar la actualización de los archivos
+				s.UpdateFilesForCurrentDirectory()
+			}
+		} else if s.ActivePanel == 2 && s.FilePosition >= 0 && s.FilePosition < len(s.Files) {
 			// Obtener el nombre del archivo seleccionado
 			selectedFile := s.Files[s.FilePosition]
 			// Cambiar el estado de selección
@@ -175,12 +223,6 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 
 	// Actualizar los archivos cuando se navega
 	s.UpdateFilesForCurrentDirectory()
-
-	// Actualizar la selección
-	if position >= 0 && position < len(items) {
-		selectedItem := items[position]
-		selected[selectedItem] = !selected[selectedItem]
-	}
 
 	return position
 }
