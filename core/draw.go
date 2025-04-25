@@ -67,17 +67,20 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Panel layout
 	panelWidth := width / 3
 
-	renderLeft := func(text string) string {
+	renderLeft := func(text string, isActive bool) string {
 		padding := panelWidth - lipgloss.Width(text)
 		if padding < 0 {
 			padding = 0
 		}
+		if isActive {
+			return ActiveHeader.Render(text + strings.Repeat(" ", padding))
+		}
 		return Cyan.Render(text) + strings.Repeat(" ", padding)
 	}
 
-	left := renderLeft("Directories")
-	middle := renderLeft("Files")
-	right := renderLeft("Preview")
+	left := renderLeft("Directories", activePanel == 1)
+	middle := renderLeft("Files", activePanel == 2)
+	right := renderLeft("Preview", activePanel == 3)
 
 	header += left + White.Render("│") + middle + White.Render("│") + right + "\n"
 
@@ -192,6 +195,11 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 
 		// Aplicar el estilo Focus si el panel está activo y este es el archivo seleccionado
 		if activePanel == 2 && i == filePosition {
+			// Rellenar hasta el ancho del panel
+			padding := panelWidth - lipgloss.Width(line)
+			if padding > 0 {
+				line += strings.Repeat(" ", padding)
+			}
 			b.WriteString(Focus.Render(line) + "\n")
 		} else if isSelected {
 			// Aplicar estilo amarillo para archivos seleccionados
