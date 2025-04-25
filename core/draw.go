@@ -5,12 +5,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 )
 
 // Function that generates the layout as a string instead of printing it
 func DrawLayout() string {
-	width, height := getTerminalSize()
+	width, _ := getTerminalSize()
 	dir           := getCurrentDirectory()
 
 	dirPrefix  := "Directory: "
@@ -32,16 +33,9 @@ func DrawLayout() string {
 			HeaderTitle.Render(titleText),
 	)
 
-	// 2ª y 3ª líneas en pantalla estrecha
+	// 2ª línea  en pantalla estrecha
 	if narrow {
-			// 2ª línea: Directory: + título alineado a la derecha
-			spaceCount := width - len(dirPrefix) - len(titleText)
-			header += "\n" +
-					DirectoryText.Render(dirPrefix) +
-					strings.Repeat(" ", spaceCount) +
-					HeaderTitle.Render(titleText)
-
-			// 3ª línea: directorio en sí
+			// 2ª línea: directorio en sí
 			header += "\n" + DirectoryDir.Render(dir)
 	} else {
 			// todo en una línea si cabe
@@ -55,11 +49,25 @@ func DrawLayout() string {
 			)
 	}
 
-	// relleno hasta height
-	header += "\n"
-	for i := 0; i < height-3; i++ {
-			header += "\n"
+	header += "\n" // deja una línea en blanco antes de los paneles
+
+	// Panel layout
+	panelWidth := width / 3
+
+	renderLeft := func(text string) string {
+		padding := panelWidth - lipgloss.Width(text)
+		if padding < 0 {
+			padding = 0
+		}
+		return Green.Render(text) + strings.Repeat(" ", padding)
 	}
+
+	left := renderLeft("Directories")
+	middle := renderLeft("Files")
+	right := renderLeft("Preview Subdirectories")
+
+	header += left + middle + right + "\n"
+
 	return header
 }
 
