@@ -6,11 +6,25 @@ import (
 	"sort"
 )
 
+var rootDirectory string
+
 func OpenTextFile(path string) {
 	cmd := exec.Command("xdg-open", path)
 	cmd.Start()
 }
 
+// GetRootDirectory devuelve el directorio desde donde se ejecuta la aplicación
+func GetRootDirectory() string {
+	if rootDirectory == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			rootDirectory = "/"
+		} else {
+			rootDirectory = dir
+		}
+	}
+	return rootDirectory
+}
 
 func PrepareDirItems(pwd string) []string {
 	files, _ := os.ReadDir(pwd)
@@ -23,7 +37,6 @@ func PrepareDirItems(pwd string) []string {
 	sort.Strings(dirs)
 	return append([]string{"."}, dirs...)
 }
-
 
 // Get the current directory
 func GetCurrentDirectory() string {

@@ -29,14 +29,14 @@ func main() {
 // Crear el modelo inicial
 initialModel := model{
 	position: 0,
-	items:    core.PrepareDirItems(core.GetCurrentDirectory()),
+	items:    core.PrepareDirItems(core.GetRootDirectory()),
 	selected: make(map[string]bool),
 	selector: core.Selector{
-		Directory:   core.GetCurrentDirectory(),
+		Directory:   core.GetRootDirectory(),
 		ActivePanel: 1,
 		Position:    0,
 		Selection:   make(map[string]bool),
-		Filtered:    core.PrepareDirItems(core.GetCurrentDirectory()),
+		Filtered:    core.PrepareDirItems(core.GetRootDirectory()),
 		Files:       []string{},
 	},
 }

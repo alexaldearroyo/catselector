@@ -51,16 +51,20 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			}
 		}
 	case "esc", "h":
-		// Navegar hacia atrás si no estamos en el directorio raíz
-		if s.Directory != "/" {
+		// Navegar hacia atrás si no estamos en el directorio raíz de la aplicación
+		rootDir := GetRootDirectory()
+		if s.Directory != rootDir {
 			parentDir := filepath.Dir(s.Directory)
-			// Verificar si el directorio padre existe y es accesible
+			// Verificar si el directorio padre existe, es accesible y no está antes del directorio raíz
 			if info, err := os.Stat(parentDir); err == nil && info.IsDir() {
-				s.Directory = parentDir
-				s.Position = 0
-				s.Filtered = PrepareDirItems(parentDir)
-				position = 0
-				items = s.Filtered // Actualizar los items con los nuevos
+				// Verificar que no estamos intentando navegar antes del directorio raíz
+				if len(parentDir) >= len(rootDir) {
+					s.Directory = parentDir
+					s.Position = 0
+					s.Filtered = PrepareDirItems(parentDir)
+					position = 0
+					items = s.Filtered // Actualizar los items con los nuevos
+				}
 			}
 		}
 	}
