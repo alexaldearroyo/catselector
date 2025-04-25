@@ -151,6 +151,23 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			// Cambiar el estado de selección
 			s.Selection[selectedFile] = !s.Selection[selectedFile]
 		}
+	case "a":
+		if s.ActivePanel == 2 {
+			// Verificar si todos los archivos están seleccionados
+			allSelected := true
+			for _, file := range s.Files {
+				if !s.Selection[file] {
+					allSelected = false
+					break
+				}
+			}
+
+			// Si todos están seleccionados, deseleccionar todos
+			// Si no todos están seleccionados, seleccionar todos
+			for _, file := range s.Files {
+				s.Selection[file] = !allSelected
+			}
+		}
 	}
 
 	// Actualizar la posición en el selector
