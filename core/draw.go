@@ -10,50 +10,56 @@ import (
 
 // Function that generates the layout as a string instead of printing it
 func DrawLayout() string {
-	// Get the terminal width and height
 	width, height := getTerminalSize()
+	dir           := getCurrentDirectory()
 
-	// Get the current directory
-	dir := getCurrentDirectory()
+	dirPrefix  := "Directory: "
+	titleText  := "Cat Explorer"
+	minSpacing := 2
 
-	// Create the first line with proper spacing
-	dirPrefix := "Directory: "
-	titleText := "Cat Explorer"
+	available := width - len(dirPrefix) - len(titleText) - minSpacing
+	narrow    := len(dir) > available
 
-	// Format the directory display
-	var directoryDisplay string
-	if len(dir) > width-len(dirPrefix)-len(titleText)-2 {
-		// Split the directory into multiple lines if needed
-		parts := splitDirectory(dir, width-len(dirPrefix)-2) // Leave space for prefix
-		directoryDisplay = strings.Join(parts, "\n")
-	} else {
-		directoryDisplay = dir
+	// 1ª línea: prefijo + espacios + título
+	spaces := width - len(dirPrefix) - len(titleText)
+	if spaces < minSpacing {
+			spaces = minSpacing
 	}
-
-	// Create the header with proper alignment
-	var header string
-
-	// First line: Directory: prefix, directory, and title
-	spacing := width - len(dirPrefix) - len(dir) - len(titleText)
-	if spacing < 0 {
-		spacing = 0
-	}
-	header = fmt.Sprintf("%s%s%s%s",
-		DirectoryText.Render(dirPrefix),
-		DirectoryDir.Render(directoryDisplay),
-		strings.Repeat(" ", spacing),
-		HeaderTitle.Render(titleText),
+	header := fmt.Sprintf(
+			"%s%s%s",
+			DirectoryText.Render(dirPrefix),
+			strings.Repeat(" ", spaces),
+			HeaderTitle.Render(titleText),
 	)
 
-	// Add a second empty line
-	header += "\n"
+	// 2ª y 3ª líneas en pantalla estrecha
+	if narrow {
+			// 2ª línea: Directory: + título alineado a la derecha
+			spaceCount := width - len(dirPrefix) - len(titleText)
+			header += "\n" +
+					DirectoryText.Render(dirPrefix) +
+					strings.Repeat(" ", spaceCount) +
+					HeaderTitle.Render(titleText)
 
-	// Fill the rest of the screen with empty lines
-	remainingHeight := height - 2 // -2 for the two header lines
-	for i := 0; i < remainingHeight; i++ {
-		header += "\n"
+			// 3ª línea: directorio en sí
+			header += "\n" + DirectoryDir.Render(dir)
+	} else {
+			// todo en una línea si cabe
+			inLineSpaces := width - len(dirPrefix) - len(dir) - len(titleText)
+			header = fmt.Sprintf(
+					"%s%s%s%s",
+					DirectoryText.Render(dirPrefix),
+					DirectoryDir.Render(dir),
+					strings.Repeat(" ", inLineSpaces),
+					HeaderTitle.Render(titleText),
+			)
 	}
 
+	// relleno hasta height
+	header += "\n"
+	for i := 0; i < height-3; i++ {
+			header += "\n"
+	}
 	return header
 }
 
