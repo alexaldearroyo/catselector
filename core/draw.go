@@ -14,7 +14,7 @@ import (
 
 func DrawLayout(position int, items []string, currentDir string, files []string, activePanel int, filePosition int) string {
 	width, height := getTerminalSize()
-	dirPrefix := "Directory: "
+	dirPrefix := ""
 	titleText := "Cat Explorer"
 	minSpacing := 2
 
@@ -51,22 +51,28 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 
 		// Determinar el estado de los subdirectorios
 		if selector.IncludeMode {
-			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Included")
+			subdirText = White.Render("Mode: ") + Magenta.Render("Include")
 		} else {
-			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Not included")
+			subdirText = White.Render("Mode: ") + Magenta.Render("Normal")
 		}
 
 		// Contar archivos y directorios seleccionados
 		selectedFiles, selectedDirs := countSelected(selector)
-		selectedText = White.Render(" | Selected: ") +
+		selectedText = White.Render("Selected: ") +
 			Magenta.Render(fmt.Sprintf("%d", selectedFiles)) +
 			White.Render(" Files") +
 			White.Render(", ") +
 			Magenta.Render(fmt.Sprintf("%d", selectedDirs)) +
 			White.Render(" Directories")
 
-		// Texto completo alineado a la izquierda
-		infoText := subdirText + selectedText
+		// Texto completo con la parte de Selected alineada a la derecha
+		infoText := subdirText
+		// Calcular espacios para alinear a la derecha
+		spaces := width - lipgloss.Width(subdirText) - lipgloss.Width(selectedText)
+		if spaces > 0 {
+			infoText += strings.Repeat(" ", spaces)
+		}
+		infoText += selectedText
 		header += "\n" + infoText
 	} else {
 		// Dividir el directorio en partes
@@ -93,22 +99,28 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 
 		// Determinar el estado de los subdirectorios
 		if selector.IncludeMode {
-			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Included")
+			subdirText = White.Render("Mode: ") + Magenta.Render("Include")
 		} else {
-			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Not included")
+			subdirText = White.Render("Mode: ") + White.Render("Normal")
 		}
 
 		// Contar archivos y directorios seleccionados
 		selectedFiles, selectedDirs := countSelected(selector)
-		selectedText = White.Render(" | Selected: ") +
+		selectedText = White.Render("Selected: ") +
 			Magenta.Render(fmt.Sprintf("%d", selectedFiles)) +
 			White.Render(" Files") +
 			White.Render(", ") +
 			Magenta.Render(fmt.Sprintf("%d", selectedDirs)) +
 			White.Render(" Directories")
 
-		// Texto completo alineado a la izquierda
-		infoText := subdirText + selectedText
+		// Texto completo con la parte de Selected alineada a la derecha
+		infoText := subdirText
+		// Calcular espacios para alinear a la derecha
+		spaces := width - lipgloss.Width(subdirText) - lipgloss.Width(selectedText)
+		if spaces > 0 {
+			infoText += strings.Repeat(" ", spaces)
+		}
+		infoText += selectedText
 		header += "\n" + infoText
 	}
 
@@ -133,11 +145,11 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	}
 
 	// Obtener el selector actual para verificar el modo include
-	selector := GetCurrentSelector()
+	// selector := GetCurrentSelector()
 	includeModeText := ""
-	if selector.IncludeMode {
-		includeModeText = " [Include Mode]"
-	}
+	// if selector.IncludeMode {
+	// 	includeModeText = " [Include Mode]"
+	// }
 
 	// Contar elementos para cada panel
 	var totalItems, totalFiles, totalSubdirs int
