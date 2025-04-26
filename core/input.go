@@ -196,8 +196,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			// Si no todos están seleccionados, seleccionar todos (excluyendo '..' y '.')
 			for _, item := range items {
 				if item != ".." && item != "." {
-					selectionKey := s.GetSelectionKey(item)
-					s.Selection[selectionKey] = !allSelected
+					// Procesar el directorio y sus subdirectorios si el modo include está activo
+					dirPath := filepath.Join(s.Directory, item)
+					processDirectoryRecursive(s, dirPath, item, !allSelected)
 				}
 			}
 		} else if s.ActivePanel == 2 {
