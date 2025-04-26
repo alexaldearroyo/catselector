@@ -62,7 +62,13 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		)
 	}
 
-	header += "\n" // dejar una línea en blanco antes de los paneles
+	// En pantallas estrechas ya hay un salto, así que solo añadimos uno más
+	// En pantallas anchas, añadimos dos saltos
+	if narrow {
+		header += "\n" // Ya hay un salto por el pwd, solo añadimos uno más
+	} else {
+		header += "\n\n" // Añadimos dos saltos
+	}
 
 	// Panel layout
 	panelWidth := width / 3
@@ -134,7 +140,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Panel izquierdo (Directories)
 	selected := map[string]bool{}
 	start := 0
-	panelHeight := height - 5
+	panelHeight := height - 6  // Ajustado para considerar la línea adicional
 	active := activePanel == 1
 	includeSubdirs := false
 
