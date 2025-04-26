@@ -1,7 +1,7 @@
 package main
 
 import (
-	"catexplore/core"
+	"catexplorer/core"
 	"fmt"
 	"os"
 	"os/signal"
