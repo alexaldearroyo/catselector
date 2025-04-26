@@ -780,20 +780,29 @@ func max(a, b int) int {
 
 func getScrollChar(lineIndex, panelHeight, totalItems, start, position int) string {
 	if totalItems <= panelHeight {
-		return " " // Sin scrollbar si todo cabe
+		return " " // No scrollbar si todo cabe
 	}
 
 	thumbSize := max(1, panelHeight*panelHeight/totalItems)
 	scrollRange := max(1, totalItems - panelHeight)
 
-	// posición relativa del scroll (0..1)
-	scrollRatio := float64(start) / float64(scrollRange)
-	thumbStart := int(scrollRatio * float64(panelHeight-thumbSize))
-
-	// si el foco está cerca del tope, ajustarlo
 	focusRelative := position - start
-	if focusRelative >= 0 && focusRelative < panelHeight {
-		thumbStart = min(focusRelative, panelHeight-thumbSize)
+
+	var thumbStart int
+
+	if start == 0 {
+		// Aún no has hecho scroll real
+		if focusRelative < panelHeight {
+			thumbStart = 0
+		} else {
+			// Si empiezas a scrollear (start > 0)
+			scrollRatio := float64(start) / float64(scrollRange)
+			thumbStart = int(scrollRatio * float64(panelHeight-thumbSize))
+		}
+	} else {
+		// Si ya has scrolleado, mover normal según scroll actual
+		scrollRatio := float64(start) / float64(scrollRange)
+		thumbStart = int(scrollRatio * float64(panelHeight-thumbSize))
 	}
 
 	if lineIndex >= thumbStart && lineIndex < thumbStart+thumbSize {
