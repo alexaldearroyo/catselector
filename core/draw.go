@@ -43,6 +43,31 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 			parentDir += "/"
 		}
 		header += "\n" + DirectoryText.Render(parentDir) + DirectoryDir.Render(lastPart)
+
+		// Añadir new_text en una línea separada después del pwd
+		// Reemplazar con el texto de subdirectorios y selección
+		selector := GetCurrentSelector()
+		var subdirText, selectedText string
+
+		// Determinar el estado de los subdirectorios
+		if selector.IncludeMode {
+			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Included")
+		} else {
+			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Not included")
+		}
+
+		// Contar archivos y directorios seleccionados
+		selectedFiles, selectedDirs := countSelected(selector)
+		selectedText = White.Render(" | Selected: ") +
+			Magenta.Render(fmt.Sprintf("%d", selectedFiles)) +
+			White.Render(" Files") +
+			White.Render(", ") +
+			Magenta.Render(fmt.Sprintf("%d", selectedDirs)) +
+			White.Render(" Directories")
+
+		// Texto completo alineado a la izquierda
+		infoText := subdirText + selectedText
+		header += "\n" + infoText
 	} else {
 		// Dividir el directorio en partes
 		parts := strings.Split(currentDir, "/")
@@ -60,15 +85,35 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 			strings.Repeat(" ", inLineSpaces),
 			HeaderTitle.Render(titleText),
 		)
+
+		// Añadir un salto de línea y luego el texto informativo
+		// Reemplazar con el texto de subdirectorios y selección
+		selector := GetCurrentSelector()
+		var subdirText, selectedText string
+
+		// Determinar el estado de los subdirectorios
+		if selector.IncludeMode {
+			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Included")
+		} else {
+			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Not included")
+		}
+
+		// Contar archivos y directorios seleccionados
+		selectedFiles, selectedDirs := countSelected(selector)
+		selectedText = White.Render(" | Selected: ") +
+			Magenta.Render(fmt.Sprintf("%d", selectedFiles)) +
+			White.Render(" Files") +
+			White.Render(", ") +
+			Magenta.Render(fmt.Sprintf("%d", selectedDirs)) +
+			White.Render(" Directories")
+
+		// Texto completo alineado a la izquierda
+		infoText := subdirText + selectedText
+		header += "\n" + infoText
 	}
 
-	// En pantallas estrechas ya hay un salto, así que solo añadimos uno más
-	// En pantallas anchas, añadimos dos saltos
-	if narrow {
-		header += "\n" // Ya hay un salto por el pwd, solo añadimos uno más
-	} else {
-		header += "\n\n" // Añadimos dos saltos
-	}
+	// Añadir un último salto de línea antes de los paneles
+	header += "\n"
 
 	// Panel layout
 	panelWidth := width / 3
@@ -695,4 +740,30 @@ func countSubdirs(dir string) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+// countSelected cuenta el número de archivos y directorios seleccionados
+func countSelected(selector *Selector) (int, int) {
+	selectedFiles := 0
+	selectedDirs := 0
+
+	for key, selected := range selector.Selection {
+		if !selected {
+			continue
+		}
+
+		// Verificar si es un directorio o un archivo
+		fileInfo, err := os.Stat(key)
+		if err != nil {
+			continue
+		}
+
+		if fileInfo.IsDir() {
+			selectedDirs++
+		} else {
+			selectedFiles++
+		}
+	}
+
+	return selectedFiles, selectedDirs
 }
