@@ -180,25 +180,21 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		}
 	case "a":
 		if s.ActivePanel == 1 {
-			// Verificar si todos los directorios están seleccionados (excluyendo '..')
+			// Verificar si todos los directorios están seleccionados (excluyendo '..' y '.')
 			allSelected := true
 			for _, item := range items {
-				if item != ".." && !s.IsSelected(item) {
+				if item != ".." && item != "." && !s.IsSelected(item) {
 					allSelected = false
 					break
 				}
 			}
 
-			// Si todos están seleccionados, deseleccionar todos (excluyendo '..')
-			// Si no todos están seleccionados, seleccionar todos (excluyendo '..')
+			// Si todos están seleccionados, deseleccionar todos (excluyendo '..' y '.')
+			// Si no todos están seleccionados, seleccionar todos (excluyendo '..' y '.')
 			for _, item := range items {
-				if item != ".." {
+				if item != ".." && item != "." {
 					selectionKey := s.GetSelectionKey(item)
 					s.Selection[selectionKey] = !allSelected
-
-					// Procesar el directorio actual
-					dirPath := filepath.Join(s.Directory, item)
-					processDirectory(s, dirPath, item, !allSelected)
 				}
 			}
 		} else if s.ActivePanel == 2 {
