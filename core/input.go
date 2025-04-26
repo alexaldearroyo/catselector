@@ -72,9 +72,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 
 			// Mostrar mensaje de éxito o error
 			if err == nil {
-				s.StatusMessage = "Archivo abierto: " + filepath.Base(outputFile)
+				s.StatusMessage = "Opened file: " + filepath.Base(outputFile)
 			} else {
-				s.StatusMessage = "Error al abrir el archivo"
+				s.StatusMessage = "Error opening file"
 			}
 			s.StatusTime = time.Now().Unix()
 		}
@@ -106,9 +106,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				// Preparar mensaje y guardar estado
 				msg := ""
 				if success {
-					msg = fmt.Sprintf("%d archivos copiados al portapapeles", selectedFiles)
+					msg = fmt.Sprintf("%d files copied to clipboard", selectedFiles)
 				} else {
-					msg = "Error al copiar al portapapeles"
+					msg = "Error copying to clipboard"
 				}
 				s.StatusMessage = msg
 				s.StatusTime = time.Now().Unix()

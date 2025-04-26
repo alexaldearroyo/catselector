@@ -119,13 +119,6 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Obtener el selector actual
 	selector := GetCurrentSelector()
 
-	// Comprobar si hay un mensaje de estado para mostrar
-	if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 5 {
-		// Mostrar el mensaje por 5 segundos
-		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFF00")).Bold(true)
-		header += statusStyle.Render(selector.StatusMessage) + "\n"
-	}
-
 	// Panel layout
 	panelWidth := width / 3
 
@@ -196,7 +189,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Panel izquierdo (Directories)
 	selected := map[string]bool{}
 	start := 0
-	panelHeight := height - 6  // Ajustado para considerar la línea adicional
+	panelHeight := height - 7  // Ajustado para considerar la línea adicional de la barra de estado
 	active := activePanel == 1
 	includeSubdirs := false
 
@@ -257,6 +250,18 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		// Añadir líneas verticales blancas entre los paneles
 		result.WriteString(leftLine + White.Render("│") + fileLine + White.Render("│") + rightLine + "\n")
 	}
+
+	// Añadir la barra de estado en la parte inferior
+	statusBar := strings.Repeat("─", width) + "\n"
+	if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 5 {
+		// Mostrar el mensaje por 5 segundos
+		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+		statusBar = statusStyle.Render(selector.StatusMessage) + "\n"
+	} else {
+		// Mostrar una barra de estado vacía
+		statusBar = strings.Repeat(" ", width) + "\n"
+	}
+	result.WriteString(statusBar)
 
 	return result.String()
 }
