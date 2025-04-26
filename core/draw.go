@@ -177,7 +177,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Left panel (Directories)
 	selected := map[string]bool{}
 	start := 0
-	panelHeight := height - 5  // Adjusted to consider the additional line of the status bar
+	panelHeight := height - 7  // Adjusted to consider the additional line of the status bar
 	active := activePanel == 1
 	includeSubdirs := false
 
