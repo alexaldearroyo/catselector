@@ -147,29 +147,28 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	var totalItems, totalFiles, totalSubdirs int
 	var err error
 
-	// Si estamos en el panel de directorios
-	if activePanel == 1 && position >= 0 && position < len(items) {
+	// Determinar el directorio para el conteo
+	var countDir string
+	if position >= 0 && position < len(items) {
+		// Si hay un directorio seleccionado, usar ese para el conteo
 		item := items[position]
-		var selectedDir string
 		if item == ".." {
-			selectedDir = filepath.Dir(currentDir)
+			countDir = filepath.Dir(currentDir)
 		} else if item == "." {
-			selectedDir = currentDir
+			countDir = currentDir
 		} else {
-			selectedDir = filepath.Join(currentDir, item)
-		}
-		totalItems, err = countItems(selectedDir)
-		if err == nil {
-			totalFiles, _ = countFiles(selectedDir)
-			totalSubdirs, _ = countSubdirs(selectedDir)
+			countDir = filepath.Join(currentDir, item)
 		}
 	} else {
-		// Si estamos en el panel de archivos o no hay directorio seleccionado
-		totalItems, err = countItems(currentDir)
-		if err == nil {
-			totalFiles, _ = countFiles(currentDir)
-			totalSubdirs, _ = countSubdirs(currentDir)
-		}
+		// Si no hay directorio seleccionado, usar el directorio actual
+		countDir = currentDir
+	}
+
+	// Contar elementos en el directorio determinado
+	totalItems, err = countItems(countDir)
+	if err == nil {
+		totalFiles, _ = countFiles(countDir)
+		totalSubdirs, _ = countSubdirs(countDir)
 	}
 
 	// Añadir contadores a los encabezados
