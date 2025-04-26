@@ -38,6 +38,7 @@ initialModel := model{
 		Selection:   make(map[string]bool),
 		Filtered:    core.PrepareDirItems(core.GetRootDirectory()),
 		Files:       []string{},
+		IncludeMode: false,
 	},
 }
 

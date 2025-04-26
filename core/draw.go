@@ -79,7 +79,11 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	}
 
 	// Obtener el selector actual para verificar el modo include
+	selector := GetCurrentSelector()
 	includeModeText := ""
+	if selector.IncludeMode {
+		includeModeText = " [Include Mode]"
+	}
 
 	left := renderLeft("Directories"+includeModeText, activePanel == 1)
 	middle := renderLeft("Files", activePanel == 2)

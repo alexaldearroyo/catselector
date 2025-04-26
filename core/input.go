@@ -43,6 +43,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				s.FilePosition = len(s.Files) - 1
 			}
 		}
+	case "i":
+		// Toggle del modo include
+		s.IncludeMode = !s.IncludeMode
 	case "tab":
 		// Guardar el panel anterior
 		previousPanel := s.ActivePanel
@@ -158,7 +161,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 
 					// Procesar el directorio actual
 					dirPath := filepath.Join(s.Directory, item)
-					processDirectory(selector, dirPath, item, !isSelected)
+					processDirectoryRecursive(selector, dirPath, item, !isSelected)
 
 					// Actualizar la lista de archivos si es necesario
 					if !isSelected {
@@ -224,25 +227,6 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 	s.UpdateFilesForCurrentDirectory()
 
 	return position
-}
-
-// Función recursiva para procesar directorios y archivos
-func processDirectory(selector *Selector, dirPath string, item string, selectState bool) {
-	// Actualizar el estado de selección del directorio actual
-	selectionKey := selector.GetSelectionKey(item)
-	selector.Selection[selectionKey] = selectState
-
-	// Leer el contenido del directorio
-	entries, err := os.ReadDir(dirPath)
-	if err == nil {
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				// Solo seleccionar archivos, ignorar subdirectorios
-				fileKey := filepath.Join(dirPath, entry.Name())
-				selector.Selection[fileKey] = selectState
-			}
-		}
-	}
 }
 
 // UpdateFileList actualiza la lista de archivos para un directorio
