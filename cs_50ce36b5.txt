@@ -1,3 +1,162 @@
+---------------------------------------------
+// File core/selector.go
+package core
+
+import (
+	"os"
+	"path/filepath"
+)
+
+// Estructura para mantener el historial de navegación
+type NavigationHistory struct {
+	Directory string
+	Position  int
+}
+
+// Estructura Selector con los campos necesarios
+type Selector struct {
+	Directory    string            // Directorio actual
+	ActivePanel  int               // Panel activo: 1 - Directorios, 2 - Archivos, 3 - Vista previa
+	Position     int               // Posición actual en el panel de directorios
+	FilePosition int               // Posición actual en el panel de archivos
+	Selection    map[string]bool   // Items seleccionados (clave: ruta relativa al directorio actual)
+	Filtered     []string          // Items filtrados para mostrar
+	Files        []string          // Archivos en el subdirectorio actual
+	History      []NavigationHistory // Historial de navegación
+	IncludeMode  bool              // Modo de inclusión de subdirectorios
+	StatusMessage string           // Mensaje de estado para mostrar al usuario
+	StatusTime   int64             // Tiempo en que se estableció el mensaje de estado
+}
+
+// Método para actualizar los archivos del directorio seleccionado
+func (s *Selector) UpdateFilesForCurrentDirectory() {
+	// Si estamos en el panel de directorios, actualizar los archivos del directorio seleccionado
+	if s.ActivePanel == 1 && s.Position < len(s.Filtered) {
+		item := s.Filtered[s.Position]
+		var dir string
+		if item == ".." {
+			dir = filepath.Dir(s.Directory)
+		} else if item == "." {
+			dir = s.Directory
+		} else {
+			dir = filepath.Join(s.Directory, item)
+		}
+
+		// Actualizar la lista de archivos para el directorio seleccionado
+		files, err := os.ReadDir(dir)
+		if err == nil {
+			var fileList []string
+			for _, file := range files {
+				if !file.IsDir() { // Solo archivos
+					fileList = append(fileList, file.Name())
+				}
+			}
+			s.Files = fileList // Actualizamos los archivos
+		} else {
+			s.Files = []string{} // Si hay error, limpiamos la lista de archivos
+		}
+	}
+	// No actualizamos los archivos cuando estamos en el panel de archivos
+}
+
+// Obtiene la clave de selección para un elemento, combinando el directorio actual con el nombre del elemento
+func (s *Selector) GetSelectionKey(item string) string {
+	if item == "." || item == ".." {
+		return item
+	}
+	return filepath.Join(s.Directory, item)
+}
+
+// Obtiene la clave de selección para un archivo, teniendo en cuenta el directorio activo
+func (s *Selector) GetFileSelectionKey(file string) string {
+	// Si estamos en el panel de archivos, el archivo está en el directorio seleccionado
+	if s.ActivePanel == 2 && s.Position < len(s.Filtered) {
+		// Determinar el directorio actual para los archivos
+		item := s.Filtered[s.Position]
+		var currentDir string
+
+		if item == ".." {
+			currentDir = filepath.Dir(s.Directory)
+		} else if item == "." {
+			currentDir = s.Directory
+		} else {
+			currentDir = filepath.Join(s.Directory, item)
+		}
+
+		return filepath.Join(currentDir, file)
+	}
+
+	// Por defecto, asumimos que el archivo está en el directorio actual
+	return filepath.Join(s.Directory, file)
+}
+
+// Verifica si un elemento está seleccionado
+func (s *Selector) IsSelected(item string) bool {
+	key := s.GetSelectionKey(item)
+	// Si el elemento es un directorio y está seleccionado, todos sus archivos también están seleccionados
+	if s.Selection[key] {
+		return true
+	}
+
+	// Si el elemento es un archivo, verificar si su directorio padre está seleccionado
+	parentDir := filepath.Dir(key)
+	return s.Selection[parentDir]
+}
+
+// Verifica si un archivo está seleccionado
+func (s *Selector) IsFileSelected(file string) bool {
+	key := s.GetFileSelectionKey(file)
+	// Verificar si el archivo está seleccionado directamente
+	if s.Selection[key] {
+		return true
+	}
+
+	// Verificar si el directorio padre está seleccionado
+	parentDir := filepath.Dir(key)
+	return s.Selection[parentDir]
+}
+
+// Función recursiva para procesar directorios y archivos
+func processDirectory(selector *Selector, dirPath string, item string, selectState bool) {
+	// Actualizar el estado de selección del directorio actual
+	selectionKey := selector.GetSelectionKey(item)
+	selector.Selection[selectionKey] = selectState
+
+	// Si el modo include está activado, procesar recursivamente los subdirectorios
+	if selector.IncludeMode {
+		// Leer el contenido del directorio
+		entries, err := os.ReadDir(dirPath)
+		if err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					// Procesar recursivamente el subdirectorio
+					subDirPath := filepath.Join(dirPath, entry.Name())
+					subItem := filepath.Join(item, entry.Name())
+					processDirectory(selector, subDirPath, subItem, selectState)
+				} else {
+					// Seleccionar archivos en el directorio actual
+					fileKey := filepath.Join(dirPath, entry.Name())
+					selector.Selection[fileKey] = selectState
+				}
+			}
+		}
+	} else {
+		// Comportamiento original: solo seleccionar archivos en el directorio actual
+		entries, err := os.ReadDir(dirPath)
+		if err == nil {
+			for _, entry := range entries {
+				if !entry.IsDir() {
+					fileKey := filepath.Join(dirPath, entry.Name())
+					selector.Selection[fileKey] = selectState
+				}
+			}
+		}
+	}
+}
+// End of file core/selector.go
+
+---------------------------------------------
+// File core/draw.go
 package core
 
 import (
@@ -256,7 +415,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		{"o/c", "Open or Copy"},
 		{"s", "Select"},
 		{"a", "Select All"},
-		{"i", "Include"},
+		{"i", "Iclude"},
 		{"q", "Quit"},
 	}
 
@@ -718,3 +877,377 @@ func countSelected(selector *Selector) (int, int) {
 
 	return selectedFiles, selectedDirs
 }
+// End of file core/draw.go
+
+---------------------------------------------
+// File core/input.go
+package core
+
+import (
+	"catexplore/export"
+	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+)
+
+func CaptureInput(key string) string {
+	// Aquí manejas las teclas que recibes
+	switch key {
+	case "j", "Down":
+		return "down"
+	case "k", "Up":
+		return "up"
+	default:
+		return ""
+	}
+}
+
+func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
+	switch key {
+	case "q":
+		// Restaurar la terminal y salir
+		fmt.Print("\033[?1049l")
+		os.Exit(0)
+	case "down", "j":
+		if s.ActivePanel == 1 {
+			position++
+			if position >= itemCount {
+				position = 0
+			}
+		} else if s.ActivePanel == 2 {
+			s.FilePosition++
+			if s.FilePosition >= len(s.Files) {
+				s.FilePosition = 0
+			}
+		}
+	case "up", "k":
+		if s.ActivePanel == 1 {
+			position--
+			if position < 0 {
+				position = itemCount - 1
+			}
+		} else if s.ActivePanel == 2 {
+			s.FilePosition--
+			if s.FilePosition < 0 {
+				s.FilePosition = len(s.Files) - 1
+			}
+		}
+	case "i":
+		// Toggle del modo include
+		s.IncludeMode = !s.IncludeMode
+	case "o":
+		// Exportar y abrir en aplicación externa
+		selectedPaths := getSelectedPaths(s.Selection)
+		outputFile := export.GenerateTextFile(
+			selectedPaths,
+			[]string{}, // Rutas excluidas vacías
+			s.IncludeMode,
+			GetRootDirectory(),
+			s.Directory,
+		)
+		if outputFile != "" {
+			// Abrir el archivo sin salir del modo alternativo
+			err := OpenTextFile(outputFile)
+
+			// Mostrar mensaje de éxito o error
+			if err == nil {
+				s.StatusMessage = "Opened file: " + filepath.Base(outputFile)
+			} else {
+				s.StatusMessage = "Error opening file"
+			}
+			s.StatusTime = time.Now().Unix()
+		}
+	case "c":
+		// Exportar, copiar al portapapeles y eliminar archivo
+		selectedPaths := getSelectedPaths(s.Selection)
+		outputFile := export.GenerateTextFile(
+			selectedPaths,
+			[]string{}, // Rutas excluidas vacías
+			s.IncludeMode,
+			GetRootDirectory(),
+			s.Directory,
+		)
+
+		if outputFile != "" {
+			// Leer el contenido del archivo
+			content, err := os.ReadFile(outputFile)
+			if err == nil {
+				// Copiar al portapapeles según el sistema operativo
+				success := CopyToClipboard(string(content))
+
+				// Eliminar el archivo temporal
+				os.Remove(outputFile)
+
+				// Contar archivos seleccionados para el mensaje de estado
+				selectedFiles := countSelectedFiles(s)
+
+				// Preparar mensaje y guardar estado
+				msg := ""
+				if success {
+					msg = fmt.Sprintf("%d files copied to clipboard", selectedFiles)
+				} else {
+					msg = "Error copying to clipboard"
+				}
+				s.StatusMessage = msg
+				s.StatusTime = time.Now().Unix()
+			}
+		}
+	case "tab":
+		// Guardar el panel anterior
+		previousPanel := s.ActivePanel
+
+		// Cambiar solo entre los paneles de directorios y archivos (1 y 2)
+		if s.ActivePanel == 1 {
+			s.ActivePanel = 2
+		} else {
+			s.ActivePanel = 1
+		}
+
+		// Solo actualizar los archivos cuando cambiamos del panel de directorios al panel de archivos
+		if previousPanel == 1 && s.ActivePanel == 2 {
+			// Si venimos del panel de directorios, actualizar los archivos del directorio seleccionado
+			if position >= 0 && position < len(items) {
+				item := items[position]
+				var selectedDir string
+				if item == ".." {
+					selectedDir = filepath.Dir(s.Directory)
+				} else if item == "." {
+					selectedDir = s.Directory
+				} else {
+					selectedDir = filepath.Join(s.Directory, item)
+				}
+
+				// Verificar si el directorio existe y es accesible
+				if info, err := os.Stat(selectedDir); err == nil && info.IsDir() {
+					// Actualizar la lista de archivos para el directorio seleccionado
+					files, err := os.ReadDir(selectedDir)
+					if err == nil {
+						var fileList []string
+						for _, file := range files {
+							if !file.IsDir() { // Solo archivos
+								fileList = append(fileList, file.Name())
+							}
+						}
+						s.Files = fileList // Actualizamos los archivos
+						s.FilePosition = 0 // Resetear la posición en el panel de archivos
+					} else {
+						s.Files = []string{} // Si hay error, limpiamos la lista de archivos
+					}
+				}
+			}
+		} else if s.ActivePanel == 2 && len(s.Files) > 0 {
+			// Si ya estamos en el panel de archivos, solo resetear la posición
+			s.FilePosition = 0
+		}
+	case "enter", "l":
+		if s.ActivePanel == 1 && position >= 0 && position < len(items) {
+			item := items[position]
+			var newDir string
+			if item == ".." {
+				newDir = filepath.Dir(s.Directory)
+			} else if item == "." {
+				newDir = s.Directory
+			} else {
+				newDir = filepath.Join(s.Directory, item)
+			}
+
+			// Verificar si el directorio existe y es accesible
+			if info, err := os.Stat(newDir); err == nil && info.IsDir() {
+				// Guardar el estado actual en el historial antes de cambiar
+				s.History = append(s.History, NavigationHistory{
+					Directory: s.Directory,
+					Position:  position,
+				})
+
+				s.Directory = newDir
+				s.Filtered = PrepareDirItems(newDir)
+
+				// Buscar la posición de "." en la nueva lista
+				for i, item := range s.Filtered {
+					if item == "." {
+						position = i
+						s.Position = i
+						break
+					}
+				}
+
+				items = s.Filtered // Actualizar los items con los nuevos
+			}
+		}
+	case "esc", "h":
+		// Navegar hacia atrás si no estamos en el directorio raíz de la aplicación
+		rootDir := GetRootDirectory()
+		if s.Directory != rootDir && len(s.History) > 0 {
+			// Obtener el último estado del historial
+			lastState := s.History[len(s.History)-1]
+
+			// Verificar si el directorio del historial existe y es accesible
+			if info, err := os.Stat(lastState.Directory); err == nil && info.IsDir() {
+				s.Directory = lastState.Directory
+				s.Filtered = PrepareDirItems(lastState.Directory)
+				position = lastState.Position
+				s.Position = lastState.Position
+				items = s.Filtered
+
+				// Eliminar el último estado del historial
+				s.History = s.History[:len(s.History)-1]
+			}
+		}
+	case "s":
+		if s.ActivePanel == 1 {
+			// Toggle de selección del directorio actual
+			if position >= 0 && position < len(items) {
+				item := items[position]
+				if item != ".." {
+					// Obtener el selector actual
+					selector := GetCurrentSelector()
+
+					// Determinar el estado actual de selección
+					isSelected := selector.IsSelected(item)
+
+					// Procesar el directorio actual
+					dirPath := filepath.Join(s.Directory, item)
+					processDirectoryRecursive(selector, dirPath, item, !isSelected)
+
+					// Actualizar la lista de archivos si es necesario
+					if !isSelected {
+						// Si estamos seleccionando, actualizar la lista de archivos
+						UpdateFileList(selector, s.Directory, item)
+					} else {
+						// Si estamos deseleccionando, limpiar la lista de archivos
+						s.Files = []string{}
+						s.FilePosition = 0
+					}
+				}
+			}
+		} else if s.ActivePanel == 2 && s.FilePosition >= 0 && s.FilePosition < len(s.Files) {
+			// Obtener el nombre del archivo seleccionado
+			selectedFile := s.Files[s.FilePosition]
+			// Cambiar el estado de selección
+			fileKey := s.GetFileSelectionKey(selectedFile)
+			s.Selection[fileKey] = !s.Selection[fileKey]
+		}
+	case "a":
+		if s.ActivePanel == 1 {
+			// Verificar si todos los directorios están seleccionados (excluyendo '..' y '.')
+			allSelected := true
+			for _, item := range items {
+				if item != ".." && item != "." && !s.IsSelected(item) {
+					allSelected = false
+					break
+				}
+			}
+
+			// Si todos están seleccionados, deseleccionar todos (excluyendo '..' y '.')
+			// Si no todos están seleccionados, seleccionar todos (excluyendo '..' y '.')
+			for _, item := range items {
+				if item != ".." && item != "." {
+					// Procesar el directorio y sus subdirectorios si el modo include está activo
+					dirPath := filepath.Join(s.Directory, item)
+					processDirectoryRecursive(s, dirPath, item, !allSelected)
+				}
+			}
+		} else if s.ActivePanel == 2 {
+			// Verificar si todos los archivos están seleccionados
+			allSelected := true
+			for _, file := range s.Files {
+				fileKey := s.GetFileSelectionKey(file)
+				if !s.Selection[fileKey] {
+					allSelected = false
+					break
+				}
+			}
+
+			// Si todos están seleccionados, deseleccionar todos
+			// Si no todos están seleccionados, seleccionar todos
+			for _, file := range s.Files {
+				fileKey := s.GetFileSelectionKey(file)
+				s.Selection[fileKey] = !allSelected
+			}
+		}
+	}
+
+	// Actualizar la posición en el selector
+	s.Position = position
+
+	// Actualizar los archivos cuando se navega
+	s.UpdateFilesForCurrentDirectory()
+
+	return position
+}
+
+// UpdateFileList actualiza la lista de archivos para un directorio
+func UpdateFileList(selector *Selector, currentDir string, item string) {
+	dirPath := filepath.Join(currentDir, item)
+	files, err := os.ReadDir(dirPath)
+	if err == nil {
+		var fileList []string
+		for _, file := range files {
+			if !file.IsDir() { // Solo archivos
+				fileList = append(fileList, file.Name())
+			}
+		}
+		selector.Files = fileList
+	}
+}
+
+// Función para obtener una lista de rutas seleccionadas
+func getSelectedPaths(selection map[string]bool) []string {
+	var paths []string
+	for path, selected := range selection {
+		if selected {
+			paths = append(paths, path)
+		}
+	}
+	return paths
+}
+
+// Contar archivos seleccionados
+func countSelectedFiles(s *Selector) int {
+	count := 0
+	processedDirs := make(map[string]bool)
+
+	for path, selected := range s.Selection {
+		if !selected {
+			continue
+		}
+
+		info, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+
+		if !info.IsDir() {
+			count++
+		} else if s.IncludeMode {
+			// Si el directorio ya fue procesado, lo saltamos
+			if processedDirs[path] {
+				continue
+			}
+			processedDirs[path] = true
+
+			// Contar archivos en el directorio y subdirectorios
+			filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+				if err == nil && !info.IsDir() {
+					count++
+				}
+				return nil
+			})
+		} else {
+			// Contar solo archivos en el nivel superior del directorio
+			files, err := os.ReadDir(path)
+			if err == nil {
+				for _, file := range files {
+					fileInfo, err := file.Info()
+					if err == nil && !fileInfo.IsDir() {
+						count++
+					}
+				}
+			}
+		}
+	}
+	return count
+}
+// End of file core/input.go
+

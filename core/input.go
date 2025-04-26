@@ -157,6 +157,15 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			// Si ya estamos en el panel de archivos, solo resetear la posición
 			s.FilePosition = 0
 		}
+	case "f":
+		// Cambiar al panel de archivos
+		s.ActivePanel = 2
+		if len(s.Files) > 0 {
+			s.FilePosition = 0
+		}
+	case "d":
+		// Cambiar al panel de directorios
+		s.ActivePanel = 1
 	case "enter", "l":
 		if s.ActivePanel == 1 && position >= 0 && position < len(items) {
 			item := items[position]
