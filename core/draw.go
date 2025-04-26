@@ -14,7 +14,7 @@ import (
 
 func DrawLayout(position int, items []string, currentDir string, files []string, activePanel int, filePosition int) string {
 	width, height := getTerminalSize()
-	dirPrefix := ""
+	dirPrefix := "Directory: "
 	titleText := "Cat Explorer"
 	minSpacing := 2
 
@@ -51,9 +51,9 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 
 		// Determinar el estado de los subdirectorios
 		if selector.IncludeMode {
-			subdirText = White.Render("Mode: ") + Magenta.Render("Include")
+			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Included")
 		} else {
-			subdirText = White.Render("Mode: ") + Magenta.Render("Normal")
+			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Not included")
 		}
 
 		// Contar archivos y directorios seleccionados
@@ -65,14 +65,8 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 			Magenta.Render(fmt.Sprintf("%d", selectedDirs)) +
 			White.Render(" Directories")
 
-		// Texto completo con la parte de Selected alineada a la derecha
-		infoText := subdirText
-		// Calcular espacios para alinear a la derecha
-		spaces := width - lipgloss.Width(subdirText) - lipgloss.Width(selectedText)
-		if spaces > 0 {
-			infoText += strings.Repeat(" ", spaces)
-		}
-		infoText += selectedText
+		// Texto completo con Selected justo después de Included/Not included
+		infoText := subdirText + "   " + selectedText
 		header += "\n" + infoText
 	} else {
 		// Dividir el directorio en partes
@@ -99,9 +93,9 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 
 		// Determinar el estado de los subdirectorios
 		if selector.IncludeMode {
-			subdirText = White.Render("Mode: ") + Magenta.Render("Include")
+			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Included")
 		} else {
-			subdirText = White.Render("Mode: ") + White.Render("Normal")
+			subdirText = White.Render("Subdirectories: ") + White.Render("Not included")
 		}
 
 		// Contar archivos y directorios seleccionados
@@ -113,14 +107,8 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 			Magenta.Render(fmt.Sprintf("%d", selectedDirs)) +
 			White.Render(" Directories")
 
-		// Texto completo con la parte de Selected alineada a la derecha
-		infoText := subdirText
-		// Calcular espacios para alinear a la derecha
-		spaces := width - lipgloss.Width(subdirText) - lipgloss.Width(selectedText)
-		if spaces > 0 {
-			infoText += strings.Repeat(" ", spaces)
-		}
-		infoText += selectedText
+		// Texto completo con Selected justo después de Included/Not included
+		infoText := subdirText + "   " + selectedText
 		header += "\n" + infoText
 	}
 
