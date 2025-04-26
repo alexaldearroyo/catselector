@@ -162,12 +162,22 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 	// Obtener el selector actual
 	selector := GetCurrentSelector()
 
+	// Verificar si el directorio actual o el directorio seleccionado está seleccionado
+	currentDirSelected := selector.IsSelected(".")
+	selectedDirSelected := false
+	if selector.ActivePanel == 1 && selector.Position < len(selector.Filtered) {
+		selectedItem := selector.Filtered[selector.Position]
+		if selectedItem != ".." {
+			selectedDirSelected = selector.IsSelected(selectedItem)
+		}
+	}
+
 	for i := 0; i < panelHeight && i < len(files); i++ {
 		file := files[i]
 		icon := GetFileIcon(file)
 
-		// Verificar si el archivo está seleccionado usando el mapa Selection del selector
-		isSelected := selector.Selection[file]
+		// Verificar si el archivo está seleccionado o si algún directorio padre está seleccionado
+		isSelected := selector.IsFileSelected(file) || currentDirSelected || selectedDirSelected
 
 		// Añadir asterisco si está seleccionado
 		marker := "  "
@@ -264,7 +274,7 @@ func renderPreviewPanel(dir string, width, height int, files []string, filePosit
 			icon := GetFileIcon(filepath.Join(selectedDir, subdir))
 
 			// Verificar si el subdirectorio está seleccionado
-			isSelected := selector.Selection[subdir]
+			isSelected := selector.Selection[filepath.Join(selectedDir, subdir)]
 
 			// Añadir el marcador correspondiente
 			marker := "  "
@@ -541,7 +551,11 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 		if item == ".." {
 			fullPath = filepath.Dir(directory)
 		}
-		isSelected := selector.Selection[item]
+		isSelected := false
+		if item != ".." {
+			itemKey := selector.GetSelectionKey(item)
+			isSelected = selector.Selection[itemKey]
+		}
 		hasFocus := active && i == position
 
 		marker := "  "
