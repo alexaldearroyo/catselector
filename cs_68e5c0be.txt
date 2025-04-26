@@ -1,5 +1,0 @@
----------------------------------------------
-// File core/model.go
-package core
-// End of file core/model.go
-
