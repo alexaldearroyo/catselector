@@ -4,9 +4,7 @@ import (
 	"catexplore/export"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"time"
 )
 
@@ -58,10 +56,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 	case "o":
 		// Exportar y abrir en aplicación externa
 		selectedPaths := getSelectedPaths(s.Selection)
-		excludedPaths := getExcludedPaths(s)
 		outputFile := export.GenerateTextFile(
 			selectedPaths,
-			excludedPaths,
+			[]string{}, // Rutas excluidas vacías
 			s.IncludeMode,
 			GetRootDirectory(),
 			s.Directory,
@@ -81,10 +78,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 	case "c":
 		// Exportar, copiar al portapapeles y eliminar archivo
 		selectedPaths := getSelectedPaths(s.Selection)
-		excludedPaths := getExcludedPaths(s)
 		outputFile := export.GenerateTextFile(
 			selectedPaths,
-			excludedPaths,
+			[]string{}, // Rutas excluidas vacías
 			s.IncludeMode,
 			GetRootDirectory(),
 			s.Directory,
@@ -95,7 +91,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			content, err := os.ReadFile(outputFile)
 			if err == nil {
 				// Copiar al portapapeles según el sistema operativo
-				success := copyToClipboard(string(content))
+				success := CopyToClipboard(string(content))
 
 				// Eliminar el archivo temporal
 				os.Remove(outputFile)
@@ -324,13 +320,6 @@ func getSelectedPaths(selection map[string]bool) []string {
 	return paths
 }
 
-// Función para obtener las rutas excluidas
-func getExcludedPaths(s *Selector) []string {
-	// Esta implementación dependerá de cómo manejes las exclusiones en tu modelo
-	// Por ahora, retorna una lista vacía
-	return []string{}
-}
-
 // Contar archivos seleccionados
 func countSelectedFiles(s *Selector) int {
 	count := 0
@@ -376,59 +365,4 @@ func countSelectedFiles(s *Selector) int {
 		}
 	}
 	return count
-}
-
-// Función para copiar al portapapeles
-func copyToClipboard(text string) bool {
-	var cmd *exec.Cmd
-
-	switch runtime.GOOS {
-	case "darwin": // macOS
-		cmd = exec.Command("pbcopy")
-	case "windows":
-		// En Windows, necesitarías usar otro método, como el paquete clipboard
-		// Por ahora, devolvemos falso como indicación de que no se soporta
-		return false
-	default: // Linux y otros
-		// Primero intentar con xclip
-		if _, err := exec.LookPath("xclip"); err == nil {
-			cmd = exec.Command("xclip", "-selection", "clipboard")
-		} else if _, err := exec.LookPath("xsel"); err == nil {
-			// Luego intentar con xsel
-			cmd = exec.Command("xsel", "--clipboard", "--input")
-		} else if _, err := exec.LookPath("wl-copy"); err == nil {
-			// Luego intentar con wl-copy (Wayland)
-			cmd = exec.Command("wl-copy")
-		} else {
-			// No se encontró ninguna utilidad de portapapeles
-			return false
-		}
-	}
-
-	if cmd == nil {
-		return false
-	}
-
-	// Crear un pipe para pasar el texto al comando
-	pipe, err := cmd.StdinPipe()
-	if err != nil {
-		return false
-	}
-
-	// Iniciar el comando
-	if err := cmd.Start(); err != nil {
-		return false
-	}
-
-	// Escribir el texto en el pipe
-	_, err = pipe.Write([]byte(text))
-	if err != nil {
-		return false
-	}
-
-	// Cerrar el pipe
-	pipe.Close()
-
-	// Esperar a que termine el comando
-	return cmd.Wait() == nil
 }
