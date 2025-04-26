@@ -48,4 +48,5 @@ var (
 	Foreground(lipgloss.Color("0")).
 	Background(lipgloss.Color("7")) // blanco
 	Selected = lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
+	Scroll = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
 )

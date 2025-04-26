@@ -587,6 +587,8 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 	// Get the current selector
 	selector := GetCurrentSelector()
 
+	contentWidth := width - 1 // Reservamos 1 columna para el scrollbar
+
 	// Calcular el rango de elementos a mostrar
 	start = selector.DirScroll
 	end := min(start + height, len(items))
@@ -610,7 +612,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 			marker = " •"
 		}
 		content := marker + item
-		maxWidth := width - 3
+		maxWidth := contentWidth - 3
 		if lipgloss.Width(content) > maxWidth {
 			content = content[:maxWidth-3] + "..."
 		}
@@ -619,24 +621,27 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 		line := icon + content
 
 		// Pad the line to the panel width
-		padding := width - lipgloss.Width(line)
+		padding := contentWidth - lipgloss.Width(line)
 		if padding > 0 {
 			line += strings.Repeat(" ", padding)
 		}
 
 		// Styles
+		style := Green
 		if hasFocus {
-			b.WriteString(Focus.Render(line) + "\n")
+			style = Focus
 		} else if isSelected {
-			b.WriteString(Yellow.Render(line) + "\n")
-		} else {
-			b.WriteString(Green.Render(line) + "\n")
+			style = Yellow
 		}
-	}
+		scrollChar := getScrollChar(i-start, height, len(items), start, position)
 
+		b.WriteString(style.Render(line) + scrollChar + "\n")
+
+
+}
 	// Añadir líneas vacías si es necesario
 	for i := end - start; i < height; i++ {
-		b.WriteString(strings.Repeat(" ", width) + "\n")
+		b.WriteString(strings.Repeat(" ", contentWidth) + " " + "\n")
 	}
 
 	return b.String()
@@ -767,4 +772,28 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func getScrollChar(lineIndex, panelHeight, totalItems, start, position int) string {
+	if totalItems <= panelHeight {
+		return " " // Sin scrollbar si todo cabe
+	}
+
+	thumbSize := max(1, panelHeight*panelHeight/totalItems)
+	scrollRange := max(1, totalItems - panelHeight)
+
+	// posición relativa del scroll (0..1)
+	scrollRatio := float64(start) / float64(scrollRange)
+	thumbStart := int(scrollRatio * float64(panelHeight-thumbSize))
+
+	// si el foco está cerca del tope, ajustarlo
+	focusRelative := position - start
+	if focusRelative >= 0 && focusRelative < panelHeight {
+		thumbStart = min(focusRelative, panelHeight-thumbSize)
+	}
+
+	if lineIndex >= thumbStart && lineIndex < thumbStart+thumbSize {
+		return Scroll.Render("█")
+	}
+	return White.Render("│")
 }
