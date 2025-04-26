@@ -126,11 +126,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	}
 
 	// Get the current selector to check the include mode
-	// selector := GetCurrentSelector()
 	includeModeText := ""
-	// if selector.IncludeMode {
-	// 	includeModeText = " [Include Mode]"
-	// }
 
 	// Count elements for each panel
 	var totalItems, totalFiles, totalSubdirs int
@@ -177,7 +173,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Left panel (Directories)
 	selected := map[string]bool{}
 	start := 0
-	panelHeight := height - 7  // Adjusted to consider the additional line of the status bar
+	panelHeight := height - 9
 	active := activePanel == 1
 	includeSubdirs := false
 
@@ -240,8 +236,8 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	}
 
 	// Add the status bar at the bottom
-	statusBar := strings.Repeat("─", width) + "\n"
-	if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 5 {
+	statusBar := strings.Repeat("─", width)
+	if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 3 {
 		// Show the message for 3 seconds
 		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 		statusBar = statusStyle.Render(selector.StatusMessage)
@@ -249,10 +245,64 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		// Show an empty status bar
 		statusBar = strings.Repeat(" ", width)
 	}
-	// Add the horizontal dividing line before the status bar
+
+	// Key bindings menu (two lines, evenly distributed and colored)
+	keyBindings := []struct {
+		Key, Desc string
+	}{
+		{"k/j", "Up and down"},
+		{"Enter/l", "Enter"},
+		{"Esc/h", "Back"},
+		{"s", "Select"},
+		{"a", "Select all"},
+		{"i", "Include"},
+		{"o", "Export"},
+		{"c", "Copy"},
+	}
+
+	// Calculate the available width and the number of shortcuts per line
+	numPerLine := (len(keyBindings) + 1) / 2
+	width, _ = getTerminalSize()
+
+	var line1, line2 string
+	for i, kb := range keyBindings {
+		// Format the text with the requested colors
+		keyText := Blue.Render(kb.Key + ":")
+		descText := White.Render(" " + kb.Desc)
+		combo := keyText + descText
+
+		// Calculate the space to distribute evenly
+		var space int
+		if i < numPerLine-1 {
+			space = (width / numPerLine) - lipgloss.Width(combo)
+		} else {
+			space = 0
+		}
+		padding := strings.Repeat(" ", space)
+
+		if i < numPerLine {
+			line1 += combo + padding
+		} else {
+			line2 += combo + padding
+		}
+	}
+
+	// Ensure both lines have the same width
+	if lipgloss.Width(line1) < width {
+		line1 += strings.Repeat(" ", width-lipgloss.Width(line1))
+	}
+	if lipgloss.Width(line2) < width {
+		line2 += strings.Repeat(" ", width-lipgloss.Width(line2))
+	}
+
+	// Calcula la línea divisoria antes de usarla
 	divider := White.Render(strings.Repeat("─", width))
 	result.WriteString(divider + "\n")
-
+	result.WriteString(line1 + "\n")
+	result.WriteString(line2 + "\n")
+	// if !strings.HasSuffix(statusBar, "\n") {
+	// 	statusBar += "\n"
+	// }
 	result.WriteString(statusBar)
 
 	return result.String()
