@@ -79,11 +79,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	}
 
 	// Obtener el selector actual para verificar el modo include
-	selector := GetCurrentSelector()
 	includeModeText := ""
-	if selector.IncludeMode {
-		includeModeText = " [Include Mode]"
-	}
 
 	left := renderLeft("Directories"+includeModeText, activePanel == 1)
 	middle := renderLeft("Files", activePanel == 2)
@@ -267,8 +263,8 @@ func renderPreviewPanel(dir string, width, height int, files []string, filePosit
 			subdir := subdirs[i]
 			icon := GetFileIcon(filepath.Join(selectedDir, subdir))
 
-			// Verificar si el subdirectorio está seleccionado y si el modo include está activo
-			isSelected := selector.Selection[subdir] && selector.IncludeMode
+			// Verificar si el subdirectorio está seleccionado
+			isSelected := selector.Selection[subdir]
 
 			// Añadir el marcador correspondiente
 			marker := "  "

@@ -144,10 +144,6 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				s.History = s.History[:len(s.History)-1]
 			}
 		}
-	case "i":
-		// Toggle del modo include
-		s.IncludeMode = !s.IncludeMode
-
 	case "s":
 		if s.ActivePanel == 1 {
 			// Toggle de selección del directorio actual
@@ -183,60 +179,58 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		}
 	case "a":
 		if s.ActivePanel == 1 {
-			// Verificar si todos los directorios están seleccionados
+			// Verificar si todos los directorios están seleccionados (excluyendo '..')
 			allSelected := true
 			for _, item := range items {
-				if !s.Selection[item] {
+				if item != ".." && !s.Selection[item] {
 					allSelected = false
 					break
 				}
 			}
 
-			// Si todos están seleccionados, deseleccionar todos
-			// Si no todos están seleccionados, seleccionar todos
+			// Si todos están seleccionados, deseleccionar todos (excluyendo '..')
+			// Si no todos están seleccionados, seleccionar todos (excluyendo '..')
 			for _, item := range items {
-				s.Selection[item] = !allSelected
+				if item != ".." {
+					s.Selection[item] = !allSelected
 
-				// Si estamos seleccionando, también seleccionar los archivos del directorio
-				if s.Selection[item] {
-					var dir string
-					if item == ".." {
-						dir = filepath.Dir(s.Directory)
-					} else if item == "." {
-						dir = s.Directory
-					} else {
-						dir = filepath.Join(s.Directory, item)
-					}
+					// Si estamos seleccionando, también seleccionar los archivos del directorio
+					if s.Selection[item] {
+						var dir string
+						if item == "." {
+							dir = s.Directory
+						} else {
+							dir = filepath.Join(s.Directory, item)
+						}
 
-					// Verificar si el directorio existe y es accesible
-					if info, err := os.Stat(dir); err == nil && info.IsDir() {
-						files, err := os.ReadDir(dir)
-						if err == nil {
-							for _, file := range files {
-								if !file.IsDir() { // Solo archivos
-									s.Selection[file.Name()] = true
+						// Verificar si el directorio existe y es accesible
+						if info, err := os.Stat(dir); err == nil && info.IsDir() {
+							files, err := os.ReadDir(dir)
+							if err == nil {
+								for _, file := range files {
+									if !file.IsDir() { // Solo archivos
+										s.Selection[file.Name()] = true
+									}
 								}
 							}
 						}
-					}
-				} else {
-					// Si estamos deseleccionando, también deseleccionar los archivos del directorio
-					var dir string
-					if item == ".." {
-						dir = filepath.Dir(s.Directory)
-					} else if item == "." {
-						dir = s.Directory
 					} else {
-						dir = filepath.Join(s.Directory, item)
-					}
+						// Si estamos deseleccionando, también deseleccionar los archivos del directorio
+						var dir string
+						if item == "." {
+							dir = s.Directory
+						} else {
+							dir = filepath.Join(s.Directory, item)
+						}
 
-					// Verificar si el directorio existe y es accesible
-					if info, err := os.Stat(dir); err == nil && info.IsDir() {
-						files, err := os.ReadDir(dir)
-						if err == nil {
-							for _, file := range files {
-								if !file.IsDir() { // Solo archivos
-									s.Selection[file.Name()] = false
+						// Verificar si el directorio existe y es accesible
+						if info, err := os.Stat(dir); err == nil && info.IsDir() {
+							files, err := os.ReadDir(dir)
+							if err == nil {
+								for _, file := range files {
+									if !file.IsDir() { // Solo archivos
+										s.Selection[file.Name()] = false
+									}
 								}
 							}
 						}
@@ -275,35 +269,13 @@ func processDirectory(selector *Selector, dirPath string, item string, selectSta
 	// Actualizar el estado de selección del directorio actual
 	selector.Selection[item] = selectState
 
-	// Si estamos en modo include y seleccionando, procesar subdirectorios
-	if selector.IncludeMode && selectState {
-		// Leer el contenido del directorio
-		entries, err := os.ReadDir(dirPath)
-		if err == nil {
-			for _, entry := range entries {
-				if entry.IsDir() {
-					// Procesar subdirectorios recursivamente
-					subdirPath := filepath.Join(dirPath, entry.Name())
-					processDirectory(selector, subdirPath, entry.Name(), selectState)
-				} else {
-					// Seleccionar archivos
-					selector.Selection[entry.Name()] = selectState
-				}
-			}
-		}
-	} else if !selectState {
-		// Si estamos deseleccionando, limpiar todos los subdirectorios y archivos
-		entries, err := os.ReadDir(dirPath)
-		if err == nil {
-			for _, entry := range entries {
-				if entry.IsDir() {
-					// Limpiar subdirectorios recursivamente
-					subdirPath := filepath.Join(dirPath, entry.Name())
-					processDirectory(selector, subdirPath, entry.Name(), false)
-				} else {
-					// Deseleccionar archivos
-					delete(selector.Selection, entry.Name())
-				}
+	// Leer el contenido del directorio
+	entries, err := os.ReadDir(dirPath)
+	if err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				// Solo seleccionar archivos, no subdirectorios
+				selector.Selection[entry.Name()] = selectState
 			}
 		}
 	}
