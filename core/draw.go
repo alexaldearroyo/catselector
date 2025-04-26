@@ -249,6 +249,10 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		// Show an empty status bar
 		statusBar = strings.Repeat(" ", width)
 	}
+	// Add the horizontal dividing line before the status bar
+	divider := White.Render(strings.Repeat("─", width))
+	result.WriteString(divider + "\n")
+
 	result.WriteString(statusBar)
 
 	return result.String()
