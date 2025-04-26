@@ -1,7 +1,7 @@
 package core
 
 import (
-	"catexplorer/export"
+	"catselector/export"
 	"fmt"
 	"os"
 	"path/filepath"

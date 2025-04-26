@@ -15,7 +15,7 @@ import (
 func DrawLayout(position int, items []string, currentDir string, files []string, activePanel int, filePosition int) string {
 	width, height := getTerminalSize()
 	dirPrefix := "Directory: "
-	titleText := "Cat Explorer"
+	titleText := "Cat Selector"
 	minSpacing := 2
 
 	available := width - len(dirPrefix) - len(titleText) - minSpacing
@@ -281,7 +281,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	}
 
 	// Calculate the available width and the number of shortcuts per line
-	numPerLine := 4 // 4 elementos por fila
+	numPerLine := 4 // 4 elements per row
 	width, _ = getTerminalSize()
 
 	var line1, line2 string
@@ -310,7 +310,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		line2 += strings.Repeat(" ", width-lipgloss.Width(line2))
 	}
 
-	// Calcula la línea divisoria antes de usarla
+	// Calculate the divider line before using it
 	divider := White.Render(strings.Repeat("─", width))
 	result.WriteString(divider + "\n")
 	result.WriteString(line1 + "\n")
@@ -340,7 +340,7 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 		}
 	}
 
-	// Calcular el rango de elementos a mostrar
+	// Calculate the range of elements to display
 	start := selector.FileScroll
 	end := min(start + panelHeight, len(files))
 
@@ -396,7 +396,7 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 
 	}
 
-	// Añadir líneas vacías si es necesario
+	// Add empty lines if necessary
 	for i := end - start; i < panelHeight; i++ {
 		b.WriteString(strings.Repeat(" ", contentWidth) + "\n")
 	}
@@ -591,9 +591,9 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 	// Get the current selector
 	selector := GetCurrentSelector()
 
-	contentWidth := width - 1 // Reservamos 1 columna para el scrollbar
+	contentWidth := width - 1 // Reserve 1 column for the scrollbar
 
-	// Calcular el rango de elementos a mostrar
+	// Calculate the range of elements to display
 	start = selector.DirScroll
 	end := min(start + height, len(items))
 
@@ -608,7 +608,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 			itemKey := selector.GetSelectionKey(item)
 			isSelected = selector.Selection[itemKey]
 		}
-		// Ajustar el focus según la posición del scroll
+		// Adjust the focus according to the scroll position
 		hasFocus := active && i == position
 
 		marker := "  "
@@ -643,7 +643,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 
 
 }
-	// Añadir líneas vacías si es necesario
+	// Add empty lines if necessary
 	for i := end - start; i < height; i++ {
 		b.WriteString(strings.Repeat(" ", contentWidth) + " " + "\n")
 	}
@@ -762,7 +762,7 @@ func countSelected(selector *Selector) (int, int) {
 	return selectedFiles, selectedDirs
 }
 
-// Función auxiliar para obtener el mínimo de dos números
+// Helper function to get the minimum of two numbers
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -770,7 +770,7 @@ func min(a, b int) int {
 	return b
 }
 
-// Función auxiliar para obtener el máximo de dos números
+// Helper function to get the maximum of two numbers
 func max(a, b int) int {
 	if a > b {
 		return a
@@ -780,7 +780,7 @@ func max(a, b int) int {
 
 func getScrollChar(lineIndex, panelHeight, totalItems, start, position int) string {
 	if totalItems <= panelHeight {
-		return " " // No scrollbar si todo cabe
+		return " " // No scrollbar if everything fits
 	}
 
 	thumbSize := max(1, panelHeight*panelHeight/totalItems)
@@ -791,16 +791,16 @@ func getScrollChar(lineIndex, panelHeight, totalItems, start, position int) stri
 	var thumbStart int
 
 	if start == 0 {
-		// Aún no has hecho scroll real
+		// Not scrolled yet
 		if focusRelative < panelHeight {
 			thumbStart = 0
 		} else {
-			// Si empiezas a scrollear (start > 0)
+			// Start scrolling (start > 0)
 			scrollRatio := float64(start) / float64(scrollRange)
 			thumbStart = int(scrollRatio * float64(panelHeight-thumbSize))
 		}
 	} else {
-		// Si ya has scrolleado, mover normal según scroll actual
+		// Scrolled, move normally according to the current scroll
 		scrollRatio := float64(start) / float64(scrollRange)
 		thumbStart = int(scrollRatio * float64(panelHeight-thumbSize))
 	}

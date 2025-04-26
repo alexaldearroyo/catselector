@@ -38,7 +38,7 @@ var (
 	// Directory text and the directory display
 	DirectoryText = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
 	DirectoryDir  = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-	// Title on the right (Cat Explorer)
+	// Title on the right (Cat Selector)
 	HeaderTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 )
 
