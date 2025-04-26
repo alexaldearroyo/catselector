@@ -27,7 +27,7 @@ var (
 	// Key hint text
 	KeyHintText = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Background(lipgloss.Color("0"))
 	// Magenta text
-	MagentaText = lipgloss.NewStyle().Foreground(lipgloss.Color("13")).Background(lipgloss.Color("0"))
+	Magenta = lipgloss.NewStyle().Foreground(lipgloss.Color("13"))
 	// Yellow text for selected files
 	Yellow = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 	// Blue text for counters

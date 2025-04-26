@@ -76,6 +76,15 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 			return ActiveHeader.Render(text + strings.Repeat(" ", padding))
 		}
 		if isCounter {
+			// Separar el texto del contador y el texto del modo include
+			parts := strings.Split(text, " [Include Mode]")
+			if len(parts) > 1 {
+				// El contador en azul
+				counterText := Blue.Render(parts[0])
+				// El modo include en magenta
+				includeText := Magenta.Render(" [Include Mode]")
+				return counterText + includeText + strings.Repeat(" ", padding)
+			}
 			return Blue.Render(text) + strings.Repeat(" ", padding)
 		}
 		return Cyan.Render(text) + strings.Repeat(" ", padding)
@@ -94,12 +103,12 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	totalSubdirs, _ := countSubdirs(currentDir)
 
 	// Añadir contadores a los encabezados
-	left := renderLeft("Directories"+includeModeText, activePanel == 1, false)
+	left := renderLeft("Directories", activePanel == 1, false)
 	middle := renderLeft("Files", activePanel == 2, false)
 	right := renderLeft("Preview", activePanel == 3, false)
 
 	// Añadir los contadores en una línea nueva
-	leftCounter := renderLeft(fmt.Sprintf("%d items", totalItems), false, true)
+	leftCounter := renderLeft(fmt.Sprintf("%d items%s", totalItems, includeModeText), false, true)
 	middleCounter := renderLeft(fmt.Sprintf("%d files", totalFiles), false, true)
 	rightCounter := renderLeft(fmt.Sprintf("%d subdirs", totalSubdirs), false, true)
 
