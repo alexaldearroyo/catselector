@@ -250,18 +250,18 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	keyBindings := []struct {
 		Key, Desc string
 	}{
-		{"k/j", "Up and down"},
+		{"k/j", "Up or Down"},
 		{"Enter/l", "Enter"},
 		{"Esc/h", "Back"},
+		{"o/c", "Open or Copy"},
 		{"s", "Select"},
-		{"a", "Select all"},
-		{"i", "Include"},
-		{"o", "Export"},
-		{"c", "Copy"},
+		{"a", "Select All"},
+		{"i", "Iclude"},
+		{"q", "Quit"},
 	}
 
 	// Calculate the available width and the number of shortcuts per line
-	numPerLine := (len(keyBindings) + 1) / 2
+	numPerLine := 4 // 4 elementos por fila
 	width, _ = getTerminalSize()
 
 	var line1, line2 string
@@ -272,12 +272,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		combo := keyText + descText
 
 		// Calculate the space to distribute evenly
-		var space int
-		if i < numPerLine-1 {
-			space = (width / numPerLine) - lipgloss.Width(combo)
-		} else {
-			space = 0
-		}
+		space := (width / numPerLine) - lipgloss.Width(combo)
 		padding := strings.Repeat(" ", space)
 
 		if i < numPerLine {
