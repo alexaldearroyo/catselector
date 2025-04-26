@@ -344,6 +344,8 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 	start := selector.FileScroll
 	end := min(start + panelHeight, len(files))
 
+	contentWidth := panelWidth - 1
+
 	for i := start; i < end; i++ {
 		file := files[i]
 		icon := GetFileIcon(file)
@@ -360,7 +362,7 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 		line := icon + marker + file
 
 		// Truncate the file name if it is too long
-		maxWidth := panelWidth - 2 // Leave space for the scrollbar
+		maxWidth := contentWidth - 2 // Leave space for the scrollbar
 		if lipgloss.Width(line) > maxWidth {
 			// Calculate how much space we have for the file name
 			iconWidth := lipgloss.Width(icon + marker)
@@ -377,24 +379,26 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 		}
 
 		// Apply the Focus style if the panel is active and this is the selected file
+		style := White
 		if activePanel == 2 && i == filePosition {
-			// Pad the line to the panel width
-			padding := panelWidth - lipgloss.Width(line)
-			if padding > 0 {
-				line += strings.Repeat(" ", padding)
-			}
-			b.WriteString(Focus.Render(line) + "\n")
+			style = Focus
 		} else if isSelected {
-			// Apply yellow style for selected files
-			b.WriteString(Yellow.Render(line) + "\n")
-		} else {
-			b.WriteString(White.Render(line) + "\n")
+			style = Yellow
 		}
+
+		padding := contentWidth - lipgloss.Width(line)
+		if padding > 0 {
+			line += strings.Repeat(" ", padding)
+		}
+
+		scrollChar := getScrollChar(i-start, panelHeight, len(files), start, filePosition)
+		b.WriteString(style.Render(line) + scrollChar + "\n")
+
 	}
 
 	// Añadir líneas vacías si es necesario
 	for i := end - start; i < panelHeight; i++ {
-		b.WriteString(strings.Repeat(" ", panelWidth) + "\n")
+		b.WriteString(strings.Repeat(" ", contentWidth) + "\n")
 	}
 
 	return b.String()
