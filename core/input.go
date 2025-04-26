@@ -31,18 +31,30 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			if position >= itemCount {
 				position = 0
 				s.DirScroll = 0
-			} else if position >= s.DirScroll + 10 { // 10 es el número de líneas visibles
-				// Cuando llegamos al último elemento visible, movemos el scroll una línea
-				s.DirScroll++
+			} else {
+				// Calcular el número de líneas visibles basado en el tamaño de la terminal
+				_, height := getTerminalSize()
+				visibleLines := height - 9 // 9 líneas para headers y otros elementos
+
+				// Si la posición actual está fuera del área visible, ajustar el scroll
+				if position >= s.DirScroll + visibleLines {
+					s.DirScroll = position - visibleLines + 1
+				}
 			}
 		} else if s.ActivePanel == 2 {
 			s.FilePosition++
 			if s.FilePosition >= len(s.Files) {
 				s.FilePosition = 0
 				s.FileScroll = 0
-			} else if s.FilePosition >= s.FileScroll + 10 {
-				// Cuando llegamos al último elemento visible, movemos el scroll una línea
-				s.FileScroll++
+			} else {
+				// Calcular el número de líneas visibles basado en el tamaño de la terminal
+				_, height := getTerminalSize()
+				visibleLines := height - 9 // 9 líneas para headers y otros elementos
+
+				// Si la posición actual está fuera del área visible, ajustar el scroll
+				if s.FilePosition >= s.FileScroll + visibleLines {
+					s.FileScroll = s.FilePosition - visibleLines + 1
+				}
 			}
 		}
 	case "up", "k":
@@ -51,20 +63,24 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			if position < 0 {
 				position = itemCount - 1
 				// Ajustar el scroll para que el último elemento esté visible
-				s.DirScroll = max(0, position - 9)
+				_, height := getTerminalSize()
+				visibleLines := height - 9
+				s.DirScroll = max(0, position - visibleLines + 1)
 			} else if position < s.DirScroll {
-				// Cuando subimos, movemos el scroll una línea hacia arriba
-				s.DirScroll--
+				// Ajustar el scroll para mantener visible el elemento actual
+				s.DirScroll = position
 			}
 		} else if s.ActivePanel == 2 {
 			s.FilePosition--
 			if s.FilePosition < 0 {
 				s.FilePosition = len(s.Files) - 1
 				// Ajustar el scroll para que el último elemento esté visible
-				s.FileScroll = max(0, s.FilePosition - 9)
+				_, height := getTerminalSize()
+				visibleLines := height - 9
+				s.FileScroll = max(0, s.FilePosition - visibleLines + 1)
 			} else if s.FilePosition < s.FileScroll {
-				// Cuando subimos, movemos el scroll una línea hacia arriba
-				s.FileScroll--
+				// Ajustar el scroll para mantener visible el elemento actual
+				s.FileScroll = s.FilePosition
 			}
 		}
 	case "i":
