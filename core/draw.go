@@ -162,7 +162,16 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Add counters to a new line
 	leftCounter := renderLeft(fmt.Sprintf("%d items", totalItems), false, true)
 	middleCounter := renderLeft(fmt.Sprintf("%d files", totalFiles), false, true)
-	rightCounter := renderLeft(fmt.Sprintf("%d subdirs", totalSubdirs), false, true)
+
+	// Determinar el texto para el panel Preview
+	var rightCounter string
+	if activePanel == 2 && filePosition >= 0 && filePosition < len(files) {
+		// Si estamos en el panel Files, mostrar el nombre del archivo
+		rightCounter = renderLeft(files[filePosition], false, true)
+	} else {
+		// Si no, mostrar el contador de subdirectorios
+		rightCounter = renderLeft(fmt.Sprintf("%d subdirs", totalSubdirs), false, true)
+	}
 
 	// Combine headers and counters
 	header += left + White.Render("│") + middle + White.Render("│") + right + "\n"
