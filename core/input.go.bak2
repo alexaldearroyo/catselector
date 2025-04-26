@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -316,11 +317,37 @@ func UpdateFileList(selector *Selector, currentDir string, item string) {
 // Función para obtener una lista de rutas seleccionadas
 func getSelectedPaths(selection map[string]bool) []string {
 	var paths []string
+	pathsMap := make(map[string]bool) // Para evitar duplicados
+
 	for path, selected := range selection {
 		if selected {
-			paths = append(paths, path)
+			// Verificar si es un directorio o un archivo
+			info, err := os.Stat(path)
+			if err != nil {
+				continue
+			}
+
+			// Añadir el camino sin duplicados
+			if !pathsMap[path] {
+				pathsMap[path] = true
+				paths = append(paths, path)
+
+				// Si es un directorio, no es necesario incluir sus archivos individuales
+				// ya que serán procesados recursivamente por GenerateTextFile
+				if info.IsDir() {
+					// Marcar todos los archivos de este directorio como ya incluidos
+					// para evitar procesarlos por separado
+					prefix := path + string(os.PathSeparator)
+					for otherPath := range selection {
+						if strings.HasPrefix(otherPath, prefix) && selection[otherPath] {
+							pathsMap[otherPath] = true // Marcar como ya incluido
+						}
+					}
+				}
+			}
 		}
 	}
+
 	return paths
 }
 
@@ -334,30 +361,24 @@ func getExcludedPaths(s *Selector) []string {
 // Contar archivos seleccionados
 func countSelectedFiles(s *Selector) int {
 	count := 0
-	processedDirs := make(map[string]bool)
+	processedFiles := make(map[string]bool) // Para evitar duplicados
 
+	// Procesar primero los directorios para marcar sus archivos como contados
 	for path, selected := range s.Selection {
 		if !selected {
 			continue
 		}
 
 		info, err := os.Stat(path)
-		if err != nil {
+		if err != nil || !info.IsDir() {
 			continue
 		}
 
-		if !info.IsDir() {
-			count++
-		} else if s.IncludeMode {
-			// Si el directorio ya fue procesado, lo saltamos
-			if processedDirs[path] {
-				continue
-			}
-			processedDirs[path] = true
-
-			// Contar archivos en el directorio y subdirectorios
+		if s.IncludeMode {
+			// Contar archivos en el directorio si IncludeMode está activo
 			filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-				if err == nil && !info.IsDir() {
+				if err == nil && !info.IsDir() && !processedFiles[p] {
+					processedFiles[p] = true
 					count++
 				}
 				return nil
@@ -367,14 +388,34 @@ func countSelectedFiles(s *Selector) int {
 			files, err := os.ReadDir(path)
 			if err == nil {
 				for _, file := range files {
+					filePath := filepath.Join(path, file.Name())
 					fileInfo, err := file.Info()
-					if err == nil && !fileInfo.IsDir() {
+					if err == nil && !fileInfo.IsDir() && !processedFiles[filePath] {
+						processedFiles[filePath] = true
 						count++
 					}
 				}
 			}
 		}
 	}
+
+	// Ahora procesar los archivos individuales que no estén dentro de directorios ya contados
+	for path, selected := range s.Selection {
+		if !selected {
+			continue
+		}
+
+		info, err := os.Stat(path)
+		if err != nil || info.IsDir() {
+			continue
+		}
+
+		if !processedFiles[path] {
+			processedFiles[path] = true
+			count++
+		}
+	}
+
 	return count
 }
 
@@ -431,4 +472,46 @@ func copyToClipboard(text string) bool {
 
 	// Esperar a que termine el comando
 	return cmd.Wait() == nil
+}
+
+// Función recursiva para procesar directorios y archivos
+func processDirectoryRecursive(selector *Selector, dirPath string, item string, selectState bool) {
+	// Actualizar el estado de selección del directorio actual
+	selectionKey := selector.GetSelectionKey(item)
+	selector.Selection[selectionKey] = selectState
+
+	// Si estamos deseleccionando, limpiar todos los archivos y subdirectorios
+	// del directorio actual del mapa de selección
+	if !selectState {
+		// Borrar entradas de selección relacionadas con este directorio
+		prefix := dirPath + string(os.PathSeparator)
+		for path := range selector.Selection {
+			if strings.HasPrefix(path, prefix) {
+				selector.Selection[path] = false
+			}
+		}
+		return
+	}
+
+	// Si estamos seleccionando y el modo include está activado,
+	// procesar recursivamente los subdirectorios
+	if selector.IncludeMode {
+		// Leer el contenido del directorio
+		entries, err := os.ReadDir(dirPath)
+		if err == nil {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					// Procesar recursivamente el subdirectorio
+					subDirPath := filepath.Join(dirPath, entry.Name())
+					subItem := filepath.Join(item, entry.Name())
+					processDirectoryRecursive(selector, subDirPath, subItem, selectState)
+				} else {
+					// Seleccionar archivos en el directorio actual
+					// No es necesario marcar los archivos como seleccionados individualmente
+					// ya que el directorio padre ya está seleccionado y la función IsFileSelected
+					// comprobará esto automáticamente.
+				}
+			}
+		}
+	}
 }

@@ -1,0 +1,5 @@
+---------------------------------------------
+// File .git/COMMIT_EDITMSG
+perfect design
+// End of file .git/COMMIT_EDITMSG
+

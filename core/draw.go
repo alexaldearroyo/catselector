@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -114,6 +115,16 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 
 	// Añadir un último salto de línea antes de los paneles
 	header += "\n"
+
+	// Obtener el selector actual
+	selector := GetCurrentSelector()
+
+	// Comprobar si hay un mensaje de estado para mostrar
+	if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 5 {
+		// Mostrar el mensaje por 5 segundos
+		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFF00")).Bold(true)
+		header += statusStyle.Render(selector.StatusMessage) + "\n"
+	}
 
 	// Panel layout
 	panelWidth := width / 3

@@ -13,15 +13,17 @@ type NavigationHistory struct {
 
 // Estructura Selector con los campos necesarios
 type Selector struct {
-	Directory   string            // Directorio actual
-	ActivePanel int               // Panel activo: 1 - Directorios, 2 - Archivos, 3 - Vista previa
-	Position    int               // Posición actual en el panel de directorios
-	FilePosition int              // Posición actual en el panel de archivos
-	Selection   map[string]bool   // Items seleccionados (clave: ruta relativa al directorio actual)
-	Filtered    []string          // Items filtrados para mostrar
-	Files       []string          // Archivos en el subdirectorio actual
-	History     []NavigationHistory // Historial de navegación
-	IncludeMode bool              // Modo de inclusión de subdirectorios
+	Directory    string            // Directorio actual
+	ActivePanel  int               // Panel activo: 1 - Directorios, 2 - Archivos, 3 - Vista previa
+	Position     int               // Posición actual en el panel de directorios
+	FilePosition int               // Posición actual en el panel de archivos
+	Selection    map[string]bool   // Items seleccionados (clave: ruta relativa al directorio actual)
+	Filtered     []string          // Items filtrados para mostrar
+	Files        []string          // Archivos en el subdirectorio actual
+	History      []NavigationHistory // Historial de navegación
+	IncludeMode  bool              // Modo de inclusión de subdirectorios
+	StatusMessage string           // Mensaje de estado para mostrar al usuario
+	StatusTime   int64             // Tiempo en que se estableció el mensaje de estado
 }
 
 // Método para actualizar los archivos del directorio seleccionado

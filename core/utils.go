@@ -3,14 +3,34 @@ package core
 import (
 	"os"
 	"os/exec"
+	"runtime"
 	"sort"
 )
 
 var rootDirectory string
 
-func OpenTextFile(path string) {
-	cmd := exec.Command("xdg-open", path)
-	cmd.Start()
+func OpenTextFile(path string) error {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin": // macOS
+		cmd = exec.Command("open", path)
+	case "windows": // Windows
+		cmd = exec.Command("cmd", "/c", "start", "", path)
+	default: // Linux y otros
+		// Intentar xdg-open (estándar para la mayoría de distribuciones Linux)
+		if _, err := exec.LookPath("xdg-open"); err == nil {
+			cmd = exec.Command("xdg-open", path)
+		} else if _, err := exec.LookPath("gnome-open"); err == nil {
+			cmd = exec.Command("gnome-open", path)
+		} else if _, err := exec.LookPath("kde-open"); err == nil {
+			cmd = exec.Command("kde-open", path)
+		} else {
+			return os.ErrNotExist
+		}
+	}
+
+	return cmd.Start()
 }
 
 // GetRootDirectory devuelve el directorio desde donde se ejecuta la aplicación
