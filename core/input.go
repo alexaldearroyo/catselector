@@ -9,7 +9,6 @@ import (
 )
 
 func CaptureInput(key string) string {
-	// Aquí manejas las teclas que recibes
 	switch key {
 	case "j", "Down":
 		return "down"
@@ -23,7 +22,7 @@ func CaptureInput(key string) string {
 func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
 	switch key {
 	case "q":
-		// Restaurar la terminal y salir
+		// Restore the terminal and exit
 		fmt.Print("\033[?1049l")
 		os.Exit(0)
 	case "down", "j":
@@ -51,23 +50,23 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			}
 		}
 	case "i":
-		// Toggle del modo include
+		// Toggle the include mode
 		s.IncludeMode = !s.IncludeMode
 	case "o":
-		// Exportar y abrir en aplicación externa
+		// Export and open in external application
 		selectedPaths := getSelectedPaths(s.Selection)
 		outputFile := export.GenerateTextFile(
 			selectedPaths,
-			[]string{}, // Rutas excluidas vacías
+			[]string{}, // Empty excluded paths
 			s.IncludeMode,
 			GetRootDirectory(),
 			s.Directory,
 		)
 		if outputFile != "" {
-			// Abrir el archivo sin salir del modo alternativo
+			// Open the file without exiting the alternative mode
 			err := OpenTextFile(outputFile)
 
-			// Mostrar mensaje de éxito o error
+			// Show success or error message
 			if err == nil {
 				s.StatusMessage = "Opened file: " + filepath.Base(outputFile)
 			} else {
@@ -76,30 +75,30 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			s.StatusTime = time.Now().Unix()
 		}
 	case "c":
-		// Exportar, copiar al portapapeles y eliminar archivo
+		// Export and copy to clipboard and delete file
 		selectedPaths := getSelectedPaths(s.Selection)
 		outputFile := export.GenerateTextFile(
 			selectedPaths,
-			[]string{}, // Rutas excluidas vacías
+			[]string{}, // Empty excluded paths
 			s.IncludeMode,
 			GetRootDirectory(),
 			s.Directory,
 		)
 
 		if outputFile != "" {
-			// Leer el contenido del archivo
+			// Read the content of the file
 			content, err := os.ReadFile(outputFile)
 			if err == nil {
-				// Copiar al portapapeles según el sistema operativo
+				// Copy to clipboard according to the operating system
 				success := CopyToClipboard(string(content))
 
-				// Eliminar el archivo temporal
+				// Delete the temporary file
 				os.Remove(outputFile)
 
-				// Contar archivos seleccionados para el mensaje de estado
+				// Count selected files for the status message
 				selectedFiles := countSelectedFiles(s)
 
-				// Preparar mensaje y guardar estado
+				// Prepare message and save status
 				msg := ""
 				if success {
 					msg = fmt.Sprintf("%d files copied to clipboard", selectedFiles)
@@ -111,19 +110,19 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			}
 		}
 	case "tab":
-		// Guardar el panel anterior
+		// Save the previous panel
 		previousPanel := s.ActivePanel
 
-		// Cambiar solo entre los paneles de directorios y archivos (1 y 2)
+		// Change only between the directory and file panels (1 and 2)
 		if s.ActivePanel == 1 {
 			s.ActivePanel = 2
 		} else {
 			s.ActivePanel = 1
 		}
 
-		// Solo actualizar los archivos cuando cambiamos del panel de directorios al panel de archivos
+		// Only update the files when changing from the directory panel to the file panel
 		if previousPanel == 1 && s.ActivePanel == 2 {
-			// Si venimos del panel de directorios, actualizar los archivos del directorio seleccionado
+			// If we come from the directory panel, update the files of the selected directory
 			if position >= 0 && position < len(items) {
 				item := items[position]
 				var selectedDir string
@@ -135,9 +134,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 					selectedDir = filepath.Join(s.Directory, item)
 				}
 
-				// Verificar si el directorio existe y es accesible
+				// Check if the directory exists and is accessible
 				if info, err := os.Stat(selectedDir); err == nil && info.IsDir() {
-					// Actualizar la lista de archivos para el directorio seleccionado
+					// Update the file list for the selected directory
 					files, err := os.ReadDir(selectedDir)
 					if err == nil {
 						var fileList []string
@@ -146,25 +145,25 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 								fileList = append(fileList, file.Name())
 							}
 						}
-						s.Files = fileList // Actualizamos los archivos
-						s.FilePosition = 0 // Resetear la posición en el panel de archivos
+						s.Files = fileList // Update the files
+						s.FilePosition = 0 // Reset the position in the file panel
 					} else {
-						s.Files = []string{} // Si hay error, limpiamos la lista de archivos
+						s.Files = []string{} // If there is an error, clear the file list
 					}
 				}
 			}
 		} else if s.ActivePanel == 2 && len(s.Files) > 0 {
-			// Si ya estamos en el panel de archivos, solo resetear la posición
+			// If we are already in the file panel, only reset the position
 			s.FilePosition = 0
 		}
 	case "f":
-		// Cambiar al panel de archivos
+		// Change to the file panel
 		s.ActivePanel = 2
 		if len(s.Files) > 0 {
 			s.FilePosition = 0
 		}
 	case "d":
-		// Cambiar al panel de directorios
+		// Change to the directory panel
 		s.ActivePanel = 1
 	case "enter", "l":
 		if s.ActivePanel == 1 && position >= 0 && position < len(items) {
@@ -178,9 +177,9 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				newDir = filepath.Join(s.Directory, item)
 			}
 
-			// Verificar si el directorio existe y es accesible
+			// Check if the directory exists and is accessible
 			if info, err := os.Stat(newDir); err == nil && info.IsDir() {
-				// Guardar el estado actual en el historial antes de cambiar
+				// Save the current state in the history before changing
 				s.History = append(s.History, NavigationHistory{
 					Directory: s.Directory,
 					Position:  position,
@@ -189,7 +188,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				s.Directory = newDir
 				s.Filtered = PrepareDirItems(newDir)
 
-				// Buscar la posición de "." en la nueva lista
+				// Search for the position of "." in the new list
 				for i, item := range s.Filtered {
 					if item == "." {
 						position = i
@@ -198,17 +197,17 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 					}
 				}
 
-				items = s.Filtered // Actualizar los items con los nuevos
+				items = s.Filtered // Update the items with the new ones
 			}
 		}
 	case "esc", "h":
-		// Navegar hacia atrás si no estamos en el directorio raíz de la aplicación
+		// Navigate back if we are not in the root directory of the application
 		rootDir := GetRootDirectory()
 		if s.Directory != rootDir && len(s.History) > 0 {
-			// Obtener el último estado del historial
+			// Get the last state of the history
 			lastState := s.History[len(s.History)-1]
 
-			// Verificar si el directorio del historial existe y es accesible
+			// Check if the directory of the history exists and is accessible
 			if info, err := os.Stat(lastState.Directory); err == nil && info.IsDir() {
 				s.Directory = lastState.Directory
 				s.Filtered = PrepareDirItems(lastState.Directory)
@@ -216,47 +215,47 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				s.Position = lastState.Position
 				items = s.Filtered
 
-				// Eliminar el último estado del historial
+				// Delete the last state of the history
 				s.History = s.History[:len(s.History)-1]
 			}
 		}
 	case "s":
 		if s.ActivePanel == 1 {
-			// Toggle de selección del directorio actual
+			// Toggle the selection of the current directory
 			if position >= 0 && position < len(items) {
 				item := items[position]
 				if item != ".." {
-					// Obtener el selector actual
+					// Get the current selector
 					selector := GetCurrentSelector()
 
-					// Determinar el estado actual de selección
+					// Determine the current selection state
 					isSelected := selector.IsSelected(item)
 
-					// Procesar el directorio actual
+					// Process the current directory
 					dirPath := filepath.Join(s.Directory, item)
 					processDirectoryRecursive(selector, dirPath, item, !isSelected)
 
-					// Actualizar la lista de archivos si es necesario
+					// Update the file list if necessary
 					if !isSelected {
-						// Si estamos seleccionando, actualizar la lista de archivos
+						// If we are selecting, update the file list
 						UpdateFileList(selector, s.Directory, item)
 					} else {
-						// Si estamos deseleccionando, limpiar la lista de archivos
+						// If we are deselecting, clear the file list
 						s.Files = []string{}
 						s.FilePosition = 0
 					}
 				}
 			}
 		} else if s.ActivePanel == 2 && s.FilePosition >= 0 && s.FilePosition < len(s.Files) {
-			// Obtener el nombre del archivo seleccionado
+			// Get the name of the selected file
 			selectedFile := s.Files[s.FilePosition]
-			// Cambiar el estado de selección
+			// Change the selection state
 			fileKey := s.GetFileSelectionKey(selectedFile)
 			s.Selection[fileKey] = !s.Selection[fileKey]
 		}
 	case "a":
 		if s.ActivePanel == 1 {
-			// Verificar si todos los directorios están seleccionados (excluyendo '..' y '.')
+			// Check if all directories are selected (excluding '..' and '.')
 			allSelected := true
 			for _, item := range items {
 				if item != ".." && item != "." && !s.IsSelected(item) {
@@ -265,17 +264,17 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				}
 			}
 
-			// Si todos están seleccionados, deseleccionar todos (excluyendo '..' y '.')
-			// Si no todos están seleccionados, seleccionar todos (excluyendo '..' y '.')
+			// If all are selected, deselect all (excluding '..' and '.')
+			// If not all are selected, select all (excluding '..' and '.')
 			for _, item := range items {
 				if item != ".." && item != "." {
-					// Procesar el directorio y sus subdirectorios si el modo include está activo
+					// Process the directory and its subdirectories if the include mode is active
 					dirPath := filepath.Join(s.Directory, item)
 					processDirectoryRecursive(s, dirPath, item, !allSelected)
 				}
 			}
 		} else if s.ActivePanel == 2 {
-			// Verificar si todos los archivos están seleccionados
+			// Check if all files are selected
 			allSelected := true
 			for _, file := range s.Files {
 				fileKey := s.GetFileSelectionKey(file)
@@ -285,8 +284,8 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				}
 			}
 
-			// Si todos están seleccionados, deseleccionar todos
-			// Si no todos están seleccionados, seleccionar todos
+			// If all are selected, deselect all
+			// If not all are selected, select all
 			for _, file := range s.Files {
 				fileKey := s.GetFileSelectionKey(file)
 				s.Selection[fileKey] = !allSelected
@@ -294,16 +293,16 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		}
 	}
 
-	// Actualizar la posición en el selector
+	// Update the position in the selector
 	s.Position = position
 
-	// Actualizar los archivos cuando se navega
+	// Update the files when navigating
 	s.UpdateFilesForCurrentDirectory()
 
 	return position
 }
 
-// UpdateFileList actualiza la lista de archivos para un directorio
+// UpdateFileList updates the file list for a directory
 func UpdateFileList(selector *Selector, currentDir string, item string) {
 	dirPath := filepath.Join(currentDir, item)
 	files, err := os.ReadDir(dirPath)
@@ -318,7 +317,7 @@ func UpdateFileList(selector *Selector, currentDir string, item string) {
 	}
 }
 
-// Función para obtener una lista de rutas seleccionadas
+// Function to get a list of selected paths
 func getSelectedPaths(selection map[string]bool) []string {
 	var paths []string
 	for path, selected := range selection {
@@ -329,7 +328,7 @@ func getSelectedPaths(selection map[string]bool) []string {
 	return paths
 }
 
-// Contar archivos seleccionados
+// Count selected files
 func countSelectedFiles(s *Selector) int {
 	count := 0
 	processedDirs := make(map[string]bool)
@@ -347,13 +346,13 @@ func countSelectedFiles(s *Selector) int {
 		if !info.IsDir() {
 			count++
 		} else if s.IncludeMode {
-			// Si el directorio ya fue procesado, lo saltamos
+			// If the directory has already been processed, skip it
 			if processedDirs[path] {
 				continue
 			}
 			processedDirs[path] = true
 
-			// Contar archivos en el directorio y subdirectorios
+			// Count files in the directory and subdirectories
 			filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
 				if err == nil && !info.IsDir() {
 					count++
@@ -361,7 +360,7 @@ func countSelectedFiles(s *Selector) int {
 				return nil
 			})
 		} else {
-			// Contar solo archivos en el nivel superior del directorio
+			// Count only files in the top level of the directory
 			files, err := os.ReadDir(path)
 			if err == nil {
 				for _, file := range files {

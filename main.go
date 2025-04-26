@@ -11,12 +11,12 @@ import (
 )
 
 func main() {
-	// Entrar en el modo alternativo de la terminal
+	// Enter terminal's alternate screen mode
 	fmt.Print("\033[?1049h")
-	// Limpiar la pantalla
+	// Clear the screen
 	fmt.Print("\033[H\033[2J")
 
-	// Configurar un manejador para restaurar la terminal al salir
+	// Configure a handler to restore the terminal when exiting
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -26,10 +26,10 @@ func main() {
 		os.Exit(0)
 	}()
 
-// Crear el modelo inicial
-initialModel := model{
-	position: 0,
-	items:    core.PrepareDirItems(core.GetRootDirectory()),
+	// Create the initial model
+	initialModel := model{
+		position: 0,
+		items:    core.PrepareDirItems(core.GetRootDirectory()),
 	selected: make(map[string]bool),
 	selector: core.Selector{
 		Directory:   core.GetRootDirectory(),
@@ -42,36 +42,34 @@ initialModel := model{
 	},
 }
 
-	// Iniciar el programa con el modelo
+	// Start the program with the model
 	p := tea.NewProgram(initialModel)
 
-	// Ejecutar la aplicación
+	// Run the application
 	err := p.Start()
 	if err != nil {
 		fmt.Println("Error: ", err)
-		// Restaurar la terminal al salir con error
+		// Restore the terminal when exiting with an error
 		fmt.Print("\033[?1049l")
 		os.Exit(1)
 	}
 
-	// Restaurar la terminal al salir normalmente
+	// Restore the terminal when exiting normally
 	fmt.Print("\033[?1049l")
 }
 
-// El modelo de la aplicación para Bubble Tea
+// The application model for Bubble Tea
 type model struct {
 	position int
 	items    []string
 	selected map[string]bool
-	selector core.Selector // Agregar el selector aquí
+	selector core.Selector // Add the selector here
 }
 
 func (m model) Init() tea.Cmd {
-	// Inicializar la posición y los elementos si es necesario
+	// Initialize the position and items if necessary
 	return nil
 }
-
-// main.go
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -80,19 +78,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		}
-		// El manejo de las teclas ya se hace en input.go.
+		// The key handling is done in input.go.
 		oldPosition := m.position
 		m.position = core.HandleKeyPress(msg.String(), m.position, len(m.items), m.selected, m.items, &m.selector)
 
-		// Sincronizar el estado del selector con el modelo
+		// Synchronize the selector state with the model
 		m.selector.Position = m.position
 		m.selector.Selection = m.selected
-		m.items = m.selector.Filtered // Actualizar los items del modelo con los filtrados
+		m.items = m.selector.Filtered // Update the model items with the filtered ones
 
-		// Actualizar el selector actual en el paquete core
+		// Update the current selector in the core package
 		core.SetCurrentSelector(&m.selector)
 
-		// Si la posición cambió en el panel de directorios, actualizar los archivos
+		// If the position changed in the directory panel, update the files
 		if oldPosition != m.position && m.selector.ActivePanel == 1 {
 			m.selector.UpdateFilesForCurrentDirectory()
 		}
@@ -101,14 +99,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	// Obtener los elementos de los directorios y la posición
+	// Get the directory elements and the position
 	dir := m.selector.Directory
 	items := m.selector.Filtered
 
-	// Actualizar los archivos del directorio seleccionado
+	// Update the files of the selected directory
 	m.selector.UpdateFilesForCurrentDirectory()
 	files := m.selector.Files
 
-	// Renderizar la vista con los archivos actualizados
+	// Render the view with the updated files
 	return core.DrawLayout(m.position, items, dir, files, m.selector.ActivePanel, m.selector.FilePosition)
 }

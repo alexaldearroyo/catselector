@@ -693,15 +693,15 @@ func countSelected(selector *Selector) (int, int) {
 
 		if fileInfo.IsDir() {
 			selectedDirs++
-			// Si el directorio ya fue procesado, lo saltamos
+			// If the directory has already been processed, skip it
 			if processedDirs[key] {
 				continue
 			}
 			processedDirs[key] = true
 
-			// Contar archivos en el directorio y sus subdirectorios
+			// Count files in the directory and its subdirectories
 			if selector.IncludeMode {
-				// Contar recursivamente todos los archivos en subdirectorios
+				// Count recursively all files in subdirectories
 				filepath.Walk(key, func(p string, info os.FileInfo, err error) error {
 					if err == nil && !info.IsDir() {
 						selectedFiles++
@@ -709,7 +709,7 @@ func countSelected(selector *Selector) (int, int) {
 					return nil
 				})
 			} else {
-				// Contar solo archivos en el nivel superior del directorio
+				// Count only files in the top level of the directory
 				files, err := os.ReadDir(key)
 				if err == nil {
 					for _, file := range files {

@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-// Función recursiva para procesar directorios y archivos
+// Recursive function to process directories and files
 func processDirectoryRecursive(selector *Selector, dirPath string, item string, selectState bool) {
-	// Actualizar el estado de selección del directorio actual
+	// Update the selection state of the current directory
 	selectionKey := selector.GetSelectionKey(item)
 	selector.Selection[selectionKey] = selectState
 
-	// Si estamos deseleccionando, limpiar todos los archivos y subdirectorios
-	// del directorio actual del mapa de selección
+	// If we are deselecting, clear all files and subdirectories
+	// of the current directory from the selection map
 	if !selectState {
-		// Borrar entradas de selección relacionadas con este directorio
+		// Delete selection entries related to this directory
 		prefix := dirPath + string(os.PathSeparator)
 		for path := range selector.Selection {
 			if strings.HasPrefix(path, prefix) {
@@ -25,21 +25,21 @@ func processDirectoryRecursive(selector *Selector, dirPath string, item string, 
 		return
 	}
 
-	// Si estamos seleccionando y el modo include está activado,
-	// procesar recursivamente los subdirectorios
+	// If we are selecting and the include mode is active,
+	// process recursively the subdirectories
 	if selector.IncludeMode {
-		// Leer el contenido del directorio
+		// Read the content of the directory
 		entries, err := os.ReadDir(dirPath)
 		if err == nil {
 			for _, entry := range entries {
 				if entry.IsDir() {
-					// Procesar recursivamente el subdirectorio
+					// Process recursively the subdirectory
 					subDirPath := filepath.Join(dirPath, entry.Name())
 					subItem := filepath.Join(item, entry.Name())
 					processDirectoryRecursive(selector, subDirPath, subItem, selectState)
 				}
-				// No marcamos los archivos individualmente ya que el directorio padre
-				// ya está seleccionado y la función IsFileSelected comprobará esto
+				// We don't mark the files individually because the parent directory
+				// is already selected and the IsFileSelected function will check this
 			}
 		}
 	}

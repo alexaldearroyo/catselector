@@ -6,19 +6,19 @@ import (
 	"strings"
 )
 
-// GetFileIcon devuelve un icono apropiado según el tipo de archivo usando Nerd Fonts
+// GetFileIcon returns an appropriate icon according to the type of file using Nerd Fonts
 func GetFileIcon(filePath string) string {
-	// Verificar si es un directorio
+	// Check if it is a directory
 	if info, err := os.Stat(filePath); err == nil && info.IsDir() {
 		return "\uf07b" // 󰉋
 	}
 
-	// Obtener la extensión del archivo
+	// Get the extension of the file
 	ext := strings.ToLower(filepath.Ext(filePath))
 
-	// Mapeo de extensiones a iconos de Nerd Fonts
+	// Mapping of extensions to Nerd Fonts icons
 	switch ext {
-	// Archivos de código
+	// Code files
 	case ".py":
 		return "\ue235" // 󰆧
 	case ".js":
@@ -44,10 +44,10 @@ func GetFileIcon(filePath string) string {
 	// Scripts
 	case ".sh", ".bat", ".ps1", ".cmd":
 		return "\uf489" // 󰒉
-	// Archivos de texto
+	// Text files
 	case ".txt", ".md", ".rst", ".log":
 		return "\uf15c" // 󰅜
-	// Archivos de configuración
+	// Configuration files
 	case ".json":
 		return "\ue60b" // 󰘋
 	case ".yml", ".yaml":
@@ -56,7 +56,7 @@ func GetFileIcon(filePath string) string {
 		return "\uf72f" // 󰜯
 	case ".ini", ".conf", ".cfg", ".toml":
 		return "\uf013" // 󰀓
-	// Imágenes
+	// Images
 	case ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".ico", ".tiff":
 		return "\uf1c5" // 󰇅
 	// Audio
@@ -65,10 +65,10 @@ func GetFileIcon(filePath string) string {
 	// Video
 	case ".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv":
 		return "\uf03d" // 󰀽
-	// Archivos comprimidos
+	// Compressed files
 	case ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2":
 		return "\uf1c6" // 󰇆
-	// Documentos
+	// Documents
 	case ".pdf":
 		return "\uf1c1" // 󰇁
 	case ".doc", ".docx":
@@ -77,18 +77,18 @@ func GetFileIcon(filePath string) string {
 		return "\uf1c3" // 󰇃
 	case ".ppt", ".pptx":
 		return "\uf1c4" // 󰇄
-	// Ejecutables
+	// Executables
 	case ".exe", ".app", ".dmg", ".msi":
 		return "\uf2e0" // 󰋠
-	// Archivos web
+	// Web files
 	case ".html", ".htm":
 		return "\uf13b" // 󰄻
 	case ".css":
 		return "\ue42b" // 󰐫
-	// Archivos de git
+	// Git files
 	case ".git", ".gitignore":
 		return "\ue702" // 󰜂
-	// Por defecto
+	// Default
 	default:
 		return "\uf15b" // 󰅛
 	}

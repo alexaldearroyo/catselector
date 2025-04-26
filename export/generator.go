@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-// GenerateTextFile genera un archivo de texto con el contenido de los archivos seleccionados
+// GenerateTextFile generates a text file with the content of the selected files
 func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool, initialDir string, currentDir string) string {
-	// Crear un hash único basado en la hora actual y los archivos seleccionados
+	// Create a unique hash based on the current time and the selected files
 	selectedCopy := make([]string, len(selected))
 	copy(selectedCopy, selected)
 	sort.Strings(selectedCopy)
@@ -25,13 +25,13 @@ func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool,
 
 	filesToProcess := []string{}
 
-	// Crear map para búsqueda rápida de exclusiones
+	// Create a map for quick exclusion search
 	excludedMap := make(map[string]bool)
 	for _, path := range excluded {
 		excludedMap[path] = true
 	}
 
-	// Recopilar archivos a procesar
+	// Collect files to process
 	for _, path := range selected {
 		if excludedMap[path] {
 			continue
@@ -44,10 +44,10 @@ func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool,
 
 		if info.IsDir() {
 			if includeSubdirs {
-				// Recorrer el directorio recursivamente
+				// Process the directory recursively
 				filepath.Walk(path, func(filePath string, fileInfo os.FileInfo, err error) error {
 					if err != nil {
-						return nil // Continuar con el siguiente archivo
+						return nil // Continue with the next file
 					}
 
 					if !fileInfo.IsDir() && !excludedMap[filePath] {
@@ -56,7 +56,7 @@ func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool,
 					return nil
 				})
 			} else {
-				// Recorrer solo el nivel superior del directorio
+				// Process only the top level of the directory
 				files, err := os.ReadDir(path)
 				if err == nil {
 					for _, file := range files {
@@ -82,7 +82,7 @@ func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool,
 		return ""
 	}
 
-	// Crear el archivo de salida
+	// Create the output file
 	outputFile := filepath.Join(initialDir, fmt.Sprintf("cs_%s.txt", hashValue))
 	file, err := os.Create(outputFile)
 	if err != nil {
@@ -90,7 +90,7 @@ func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool,
 	}
 	defer file.Close()
 
-	// Escribir el contenido de cada archivo
+	// Write the content of each file
 	for _, filePath := range filesToProcess {
 		relPath, err := filepath.Rel(currentDir, filePath)
 		if err != nil {
@@ -104,7 +104,7 @@ func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool,
 		content, err := os.ReadFile(filePath)
 		if err == nil {
 			file.Write(content)
-			// Asegurar que el contenido termina con una nueva línea
+			// Ensure the content ends with a new line
 			if len(content) > 0 && content[len(content)-1] != '\n' {
 				file.WriteString("\n")
 			}
@@ -120,13 +120,13 @@ func GenerateTextFile(selected []string, excluded []string, includeSubdirs bool,
 	return outputFile
 }
 
-// GenerateCombinedFile genera un archivo combinado a partir de una lista de archivos
+// GenerateCombinedFile generates a combined file from a list of files
 func GenerateCombinedFile(fileList []string, baseDir string) string {
 	if len(fileList) == 0 {
 		return ""
 	}
 
-	// Crear un hash único basado en la hora actual y los archivos seleccionados
+	// Create a unique hash based on the current time and the selected files
 	fileListCopy := make([]string, len(fileList))
 	copy(fileListCopy, fileList)
 	sort.Strings(fileListCopy)
@@ -138,7 +138,7 @@ func GenerateCombinedFile(fileList []string, baseDir string) string {
 
 	filesToProcess := []string{}
 
-	// Recopilar archivos a procesar
+	// Collect files to process
 	for _, path := range fileList {
 		info, err := os.Stat(path)
 		if err != nil {
@@ -146,10 +146,10 @@ func GenerateCombinedFile(fileList []string, baseDir string) string {
 		}
 
 		if info.IsDir() {
-			// Recorrer el directorio recursivamente
+			// Process the directory recursively
 			filepath.Walk(path, func(filePath string, fileInfo os.FileInfo, err error) error {
 				if err != nil {
-					return nil // Continuar con el siguiente archivo
+					return nil // Continue with the next file
 				}
 
 				if !fileInfo.IsDir() {
@@ -166,7 +166,7 @@ func GenerateCombinedFile(fileList []string, baseDir string) string {
 		return ""
 	}
 
-	// Crear el archivo de salida
+	// Create the output file
 	outputFile := filepath.Join(baseDir, fmt.Sprintf("cs_%s.txt", hashValue))
 	file, err := os.Create(outputFile)
 	if err != nil {
@@ -174,7 +174,7 @@ func GenerateCombinedFile(fileList []string, baseDir string) string {
 	}
 	defer file.Close()
 
-	// Escribir el contenido de cada archivo
+	// Write the content of each file
 	for _, filePath := range filesToProcess {
 		relPath, err := filepath.Rel(baseDir, filePath)
 		if err != nil {
@@ -188,7 +188,7 @@ func GenerateCombinedFile(fileList []string, baseDir string) string {
 		content, err := os.ReadFile(filePath)
 		if err == nil {
 			file.Write(content)
-			// Asegurar que el contenido termina con una nueva línea
+			// Ensure the content ends with a new line
 			if len(content) > 0 && content[len(content)-1] != '\n' {
 				file.WriteString("\n")
 			}

@@ -22,8 +22,8 @@ func OpenTextFile(path string) error {
 		cmd = exec.Command("open", path)
 	case "windows": // Windows
 		cmd = exec.Command("cmd", "/c", "start", "", path)
-	default: // Linux y otros
-		// Intentar xdg-open (estándar para la mayoría de distribuciones Linux)
+	default: // Linux and others
+		// Try xdg-open (standard for most Linux distributions)
 		if _, err := exec.LookPath("xdg-open"); err == nil {
 			cmd = exec.Command("xdg-open", path)
 		} else if _, err := exec.LookPath("gnome-open"); err == nil {
@@ -38,7 +38,7 @@ func OpenTextFile(path string) error {
 	return cmd.Start()
 }
 
-// GetRootDirectory devuelve el directorio desde donde se ejecuta la aplicación
+// GetRootDirectory returns the directory from where the application is executed
 func GetRootDirectory() string {
 	if rootDirectory == "" {
 		dir, err := os.Getwd()
@@ -61,7 +61,7 @@ func PrepareDirItems(pwd string) []string {
 	}
 	sort.Strings(dirs)
 
-	// Añadir ".." como primer item si no estamos en el directorio root
+	// Add ".." as the first item if we're not in the root directory
 	rootDir := GetRootDirectory()
 	if pwd != rootDir {
 		return append([]string{"..", "."}, dirs...)
@@ -78,7 +78,7 @@ func GetCurrentDirectory() string {
 	return dir
 }
 
-// RenderLeft renderiza el texto del encabezado con el estilo apropiado
+// RenderLeft renders the header text with the appropriate style
 func RenderLeft(text string, isActive bool, isCounter bool, panelWidth int) string {
 	padding := panelWidth - lipgloss.Width(text)
 	if padding < 0 {
@@ -93,7 +93,7 @@ func RenderLeft(text string, isActive bool, isCounter bool, panelWidth int) stri
 	return Cyan.Render(text) + strings.Repeat(" ", padding)
 }
 
-// IsBinaryFile verifica si un archivo es binario
+// IsBinaryFile checks if a file is binary
 func IsBinaryFile(filePath string) bool {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -121,7 +121,7 @@ func IsBinaryFile(filePath string) bool {
 	return nullCount > 10 || float64(nonPrintableCount)/float64(n) > 0.3
 }
 
-// CopyToClipboard copia texto al portapapeles del sistema
+// CopyToClipboard copies text to the system clipboard
 func CopyToClipboard(text string) bool {
 	var cmd *exec.Cmd
 
@@ -129,9 +129,9 @@ func CopyToClipboard(text string) bool {
 	case "darwin": // macOS
 		cmd = exec.Command("pbcopy")
 	case "windows":
-		// En Windows, necesitarías usar otro método, como el paquete clipboard
+		// In Windows, you would need to use another method, like the clipboard package
 		return false
-	default: // Linux y otros
+	default: // Linux and others
 		if _, err := exec.LookPath("xclip"); err == nil {
 			cmd = exec.Command("xclip", "-selection", "clipboard")
 		} else if _, err := exec.LookPath("xsel"); err == nil {
@@ -165,7 +165,7 @@ func CopyToClipboard(text string) bool {
 	return cmd.Wait() == nil
 }
 
-// ShowErrorMessage muestra un mensaje de error formateado
+// ShowErrorMessage shows a formatted error message
 func ShowErrorMessage(b *strings.Builder, prefix, filePath string, width, height int) {
 	errorMsg := prefix
 	if len(filePath) > width-20 {
@@ -190,7 +190,7 @@ func ShowErrorMessage(b *strings.Builder, prefix, filePath string, width, height
 	}
 }
 
-// ShowBinaryFileMessage muestra un mensaje para archivos binarios
+// ShowBinaryFileMessage shows a message for binary files
 func ShowBinaryFileMessage(b *strings.Builder, filePath string, size int64, width, height int) {
 	sizeStr := FormatFileSize(size)
 
@@ -223,7 +223,7 @@ func ShowBinaryFileMessage(b *strings.Builder, filePath string, size int64, widt
 	}
 }
 
-// FormatFileSize formatea el tamaño de un archivo en una cadena legible
+// FormatFileSize formats the size of a file into a readable string
 func FormatFileSize(size int64) string {
 	const unit = 1024
 	if size < unit {
@@ -239,7 +239,7 @@ func FormatFileSize(size int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
-// SanitizeLine elimina caracteres problemáticos de una línea
+// SanitizeLine removes problematic characters from a line
 func SanitizeLine(line string) string {
 	var result strings.Builder
 	for _, r := range line {

@@ -1,4 +1,3 @@
-// core/styles.go
 package core
 
 import "github.com/charmbracelet/lipgloss"

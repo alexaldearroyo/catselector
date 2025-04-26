@@ -5,30 +5,30 @@ import (
 	"path/filepath"
 )
 
-// Estructura para mantener el historial de navegación
+// Structure to maintain the navigation history
 type NavigationHistory struct {
 	Directory string
 	Position  int
 }
 
-// Estructura Selector con los campos necesarios
+// Structure Selector with the necessary fields
 type Selector struct {
-	Directory    string            // Directorio actual
-	ActivePanel  int               // Panel activo: 1 - Directorios, 2 - Archivos, 3 - Vista previa
-	Position     int               // Posición actual en el panel de directorios
-	FilePosition int               // Posición actual en el panel de archivos
-	Selection    map[string]bool   // Items seleccionados (clave: ruta relativa al directorio actual)
-	Filtered     []string          // Items filtrados para mostrar
-	Files        []string          // Archivos en el subdirectorio actual
-	History      []NavigationHistory // Historial de navegación
-	IncludeMode  bool              // Modo de inclusión de subdirectorios
-	StatusMessage string           // Mensaje de estado para mostrar al usuario
-	StatusTime   int64             // Tiempo en que se estableció el mensaje de estado
+	Directory    string            // Current directory
+	ActivePanel  int               // Active panel: 1 - Directories, 2 - Files, 3 - Preview
+	Position     int               // Current position in the directory panel
+	FilePosition int               // Current position in the files panel
+	Selection    map[string]bool   // Selected items (key: relative path to the current directory)
+	Filtered     []string          // Items filtered to display
+	Files        []string          // Files in the current directory
+	History      []NavigationHistory // Navigation history
+	IncludeMode  bool              // Include mode for subdirectories
+	StatusMessage string           // Status message to display to the user
+	StatusTime   int64             // Time when the status message was set
 }
 
-// Método para actualizar los archivos del directorio seleccionado
+// Method to update the files of the selected directory
 func (s *Selector) UpdateFilesForCurrentDirectory() {
-	// Si estamos en el panel de directorios, actualizar los archivos del directorio seleccionado
+	// If we are in the directory panel, update the files of the selected directory
 	if s.ActivePanel == 1 && s.Position < len(s.Filtered) {
 		item := s.Filtered[s.Position]
 		var dir string
@@ -40,24 +40,24 @@ func (s *Selector) UpdateFilesForCurrentDirectory() {
 			dir = filepath.Join(s.Directory, item)
 		}
 
-		// Actualizar la lista de archivos para el directorio seleccionado
+		// Update the list of files for the selected directory
 		files, err := os.ReadDir(dir)
 		if err == nil {
 			var fileList []string
 			for _, file := range files {
-				if !file.IsDir() { // Solo archivos
+				if !file.IsDir() { // Only files
 					fileList = append(fileList, file.Name())
 				}
 			}
-			s.Files = fileList // Actualizamos los archivos
+			s.Files = fileList // Update the files
 		} else {
-			s.Files = []string{} // Si hay error, limpiamos la lista de archivos
+			s.Files = []string{} // If there is an error, clear the list of files
 		}
 	}
-	// No actualizamos los archivos cuando estamos en el panel de archivos
+	// We don't update the files when we are in the files panel
 }
 
-// Obtiene la clave de selección para un elemento, combinando el directorio actual con el nombre del elemento
+// Get the selection key for an item, combining the current directory with the name of the item
 func (s *Selector) GetSelectionKey(item string) string {
 	if item == "." || item == ".." {
 		return item
@@ -65,11 +65,11 @@ func (s *Selector) GetSelectionKey(item string) string {
 	return filepath.Join(s.Directory, item)
 }
 
-// Obtiene la clave de selección para un archivo, teniendo en cuenta el directorio activo
+// Get the selection key for a file, taking into account the active directory
 func (s *Selector) GetFileSelectionKey(file string) string {
-	// Si estamos en el panel de archivos, el archivo está en el directorio seleccionado
+	// If we are in the files panel, the file is in the selected directory
 	if s.ActivePanel == 2 && s.Position < len(s.Filtered) {
-		// Determinar el directorio actual para los archivos
+		// Determine the current directory for the files
 		item := s.Filtered[s.Position]
 		var currentDir string
 
@@ -84,62 +84,62 @@ func (s *Selector) GetFileSelectionKey(file string) string {
 		return filepath.Join(currentDir, file)
 	}
 
-	// Por defecto, asumimos que el archivo está en el directorio actual
+	// By default, we assume that the file is in the current directory
 	return filepath.Join(s.Directory, file)
 }
 
-// Verifica si un elemento está seleccionado
+// Check if an item is selected
 func (s *Selector) IsSelected(item string) bool {
 	key := s.GetSelectionKey(item)
-	// Si el elemento es un directorio y está seleccionado, todos sus archivos también están seleccionados
+	// If the item is a directory and is selected, all its files are also selected
 	if s.Selection[key] {
 		return true
 	}
 
-	// Si el elemento es un archivo, verificar si su directorio padre está seleccionado
+	// If the item is a file, check if its parent directory is selected
 	parentDir := filepath.Dir(key)
 	return s.Selection[parentDir]
 }
 
-// Verifica si un archivo está seleccionado
+// Check if a file is selected
 func (s *Selector) IsFileSelected(file string) bool {
 	key := s.GetFileSelectionKey(file)
-	// Verificar si el archivo está seleccionado directamente
+	// Check if the file is selected directly
 	if s.Selection[key] {
 		return true
 	}
 
-	// Verificar si el directorio padre está seleccionado
+	// Check if the parent directory is selected
 	parentDir := filepath.Dir(key)
 	return s.Selection[parentDir]
 }
 
-// Función recursiva para procesar directorios y archivos
+// Recursive function to process directories and files
 func processDirectory(selector *Selector, dirPath string, item string, selectState bool) {
-	// Actualizar el estado de selección del directorio actual
+	// Update the selection state of the current directory
 	selectionKey := selector.GetSelectionKey(item)
 	selector.Selection[selectionKey] = selectState
 
-	// Si el modo include está activado, procesar recursivamente los subdirectorios
+	// If the include mode is active, process recursively the subdirectories
 	if selector.IncludeMode {
-		// Leer el contenido del directorio
+		// Read the content of the directory
 		entries, err := os.ReadDir(dirPath)
 		if err == nil {
 			for _, entry := range entries {
 				if entry.IsDir() {
-					// Procesar recursivamente el subdirectorio
+					// Process recursively the subdirectory
 					subDirPath := filepath.Join(dirPath, entry.Name())
 					subItem := filepath.Join(item, entry.Name())
 					processDirectory(selector, subDirPath, subItem, selectState)
 				} else {
-					// Seleccionar archivos en el directorio actual
+					// Select files in the current directory
 					fileKey := filepath.Join(dirPath, entry.Name())
 					selector.Selection[fileKey] = selectState
 				}
 			}
 		}
 	} else {
-		// Comportamiento original: solo seleccionar archivos en el directorio actual
+		// Original behavior: only select files in the current directory
 		entries, err := os.ReadDir(dirPath)
 		if err == nil {
 			for _, entry := range entries {
