@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -19,6 +20,10 @@ func CaptureInput(key string) string {
 
 func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
 	switch key {
+	case "q":
+		// Restaurar la terminal y salir
+		fmt.Print("\033[?1049l")
+		os.Exit(0)
 	case "down", "j":
 		if s.ActivePanel == 1 {
 			position++
