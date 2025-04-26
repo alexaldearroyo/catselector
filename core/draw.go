@@ -182,7 +182,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Left panel (Directories)
 	selected := map[string]bool{}
 	start := 0
-	panelHeight := height - 10
+	panelHeight := height - 9
 	active := activePanel == 1
 	includeSubdirs := false
 
@@ -202,6 +202,17 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	leftLines := strings.Split(leftPanel, "\n")
 	fileLines := strings.Split(filePanel, "\n")
 	rightLines := strings.Split(rightPanel, "\n")
+
+	// Remove the last empty line if it exists
+	if len(leftLines) > 0 && leftLines[len(leftLines)-1] == "" {
+		leftLines = leftLines[:len(leftLines)-1]
+	}
+	if len(fileLines) > 0 && fileLines[len(fileLines)-1] == "" {
+		fileLines = fileLines[:len(fileLines)-1]
+	}
+	if len(rightLines) > 0 && rightLines[len(rightLines)-1] == "" {
+		rightLines = rightLines[:len(rightLines)-1]
+	}
 
 	// Find the maximum number of lines
 	maxLines := len(leftLines)
