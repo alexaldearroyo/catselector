@@ -149,7 +149,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			// Toggle de selección del directorio actual
 			if position >= 0 && position < len(items) {
 				item := items[position]
-				if item != ".." && item != "." {
+				if item != ".." {
 					// Obtener el selector actual
 					selector := GetCurrentSelector()
 
