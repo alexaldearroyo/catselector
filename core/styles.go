@@ -30,6 +30,8 @@ var (
 	MagentaText = lipgloss.NewStyle().Foreground(lipgloss.Color("13")).Background(lipgloss.Color("0"))
 	// Yellow text for selected files
 	Yellow = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+	// Blue text for counters
+	Blue = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
 )
 
 // Styles for the layout (combined into one block)

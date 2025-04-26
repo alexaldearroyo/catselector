@@ -67,13 +67,16 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Panel layout
 	panelWidth := width / 3
 
-	renderLeft := func(text string, isActive bool) string {
+	renderLeft := func(text string, isActive bool, isCounter bool) string {
 		padding := panelWidth - lipgloss.Width(text)
 		if padding < 0 {
 			padding = 0
 		}
 		if isActive {
 			return ActiveHeader.Render(text + strings.Repeat(" ", padding))
+		}
+		if isCounter {
+			return Blue.Render(text) + strings.Repeat(" ", padding)
 		}
 		return Cyan.Render(text) + strings.Repeat(" ", padding)
 	}
@@ -85,11 +88,24 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		includeModeText = " [Include Mode]"
 	}
 
-	left := renderLeft("Directories"+includeModeText, activePanel == 1)
-	middle := renderLeft("Files", activePanel == 2)
-	right := renderLeft("Preview", activePanel == 3)
+	// Contar elementos para cada panel
+	totalItems, _ := countItems(currentDir)
+	totalFiles, _ := countFiles(currentDir)
+	totalSubdirs, _ := countSubdirs(currentDir)
 
+	// Añadir contadores a los encabezados
+	left := renderLeft("Directories"+includeModeText, activePanel == 1, false)
+	middle := renderLeft("Files", activePanel == 2, false)
+	right := renderLeft("Preview", activePanel == 3, false)
+
+	// Añadir los contadores en una línea nueva
+	leftCounter := renderLeft(fmt.Sprintf("%d items", totalItems), false, true)
+	middleCounter := renderLeft(fmt.Sprintf("%d files", totalFiles), false, true)
+	rightCounter := renderLeft(fmt.Sprintf("%d subdirs", totalSubdirs), false, true)
+
+	// Combinar las cabeceras y contadores
 	header += left + White.Render("│") + middle + White.Render("│") + right + "\n"
+	header += leftCounter + White.Render("│") + middleCounter + White.Render("│") + rightCounter + "\n"
 
 	// Panel izquierdo (Directories)
 	selected := map[string]bool{}
@@ -610,4 +626,43 @@ func GetCurrentSelector() *Selector {
 		}
 	}
 	return currentSelector
+}
+
+// countItems cuenta el número total de elementos (archivos + subdirectorios) en un directorio
+func countItems(dir string) (int, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0, err
+	}
+	return len(entries), nil
+}
+
+// countFiles cuenta el número de archivos en un directorio
+func countFiles(dir string) (int, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0, err
+	}
+	count := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			count++
+		}
+	}
+	return count, nil
+}
+
+// countSubdirs cuenta el número de subdirectorios en un directorio
+func countSubdirs(dir string) (int, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0, err
+	}
+	count := 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			count++
+		}
+	}
+	return count, nil
 }
