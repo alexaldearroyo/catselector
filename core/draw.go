@@ -125,6 +125,8 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		return RenderLeft(text, isActive, isCounter, panelWidth)
 	}
 
+	// Add a white divider line above the panel headers
+	header += White.Render(strings.Repeat("─", width)) + "\n"
 
 	// Count elements for each panel
 	var totalItems, totalFiles, totalSubdirs int
@@ -180,7 +182,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Left panel (Directories)
 	selected := map[string]bool{}
 	start := 0
-	panelHeight := height - 9
+	panelHeight := height - 10
 	active := activePanel == 1
 	includeSubdirs := false
 
