@@ -125,8 +125,6 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		return RenderLeft(text, isActive, isCounter, panelWidth)
 	}
 
-	// Get the current selector to check the include mode
-	includeModeText := ""
 
 	// Count elements for each panel
 	var totalItems, totalFiles, totalSubdirs int
@@ -157,7 +155,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	}
 
 	// Add counters to the headers
-	left := renderLeft("Directories"+includeModeText, activePanel == 1, false)
+	left := renderLeft("Directories", activePanel == 1, false)
 	middle := renderLeft("Files", activePanel == 2, false)
 	right := renderLeft("Preview", activePanel == 3, false)
 
@@ -254,9 +252,9 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		{"Enter/l", "Enter"},
 		{"Esc/h", "Back"},
 		{"o/c", "Open or Copy"},
-		{"s", "Select"},
-		{"a", "Select All"},
+		{"s/a", "Select or All"},
 		{"i", "Include"},
+		{"Tab", "Change Panel"},
 		{"q", "Quit"},
 	}
 
