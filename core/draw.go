@@ -177,7 +177,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Left panel (Directories)
 	selected := map[string]bool{}
 	start := 0
-	panelHeight := height - 7  // Adjusted to consider the additional line of the status bar
+	panelHeight := height - 5  // Adjusted to consider the additional line of the status bar
 	active := activePanel == 1
 	includeSubdirs := false
 
@@ -242,12 +242,12 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Add the status bar at the bottom
 	statusBar := strings.Repeat("─", width) + "\n"
 	if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 5 {
-		// Show the message for 5 seconds
+		// Show the message for 3 seconds
 		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-		statusBar = statusStyle.Render(selector.StatusMessage) + "\n"
+		statusBar = statusStyle.Render(selector.StatusMessage)
 	} else {
 		// Show an empty status bar
-		statusBar = strings.Repeat(" ", width) + "\n"
+		statusBar = strings.Repeat(" ", width)
 	}
 	result.WriteString(statusBar)
 
