@@ -30,11 +30,19 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			position++
 			if position >= itemCount {
 				position = 0
+				s.DirScroll = 0
+			} else if position >= s.DirScroll + 10 { // 10 es el número de líneas visibles
+				// Cuando llegamos al último elemento visible, movemos el scroll una línea
+				s.DirScroll++
 			}
 		} else if s.ActivePanel == 2 {
 			s.FilePosition++
 			if s.FilePosition >= len(s.Files) {
 				s.FilePosition = 0
+				s.FileScroll = 0
+			} else if s.FilePosition >= s.FileScroll + 10 {
+				// Cuando llegamos al último elemento visible, movemos el scroll una línea
+				s.FileScroll++
 			}
 		}
 	case "up", "k":
@@ -42,11 +50,21 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			position--
 			if position < 0 {
 				position = itemCount - 1
+				// Ajustar el scroll para que el último elemento esté visible
+				s.DirScroll = max(0, position - 9)
+			} else if position < s.DirScroll {
+				// Cuando subimos, movemos el scroll una línea hacia arriba
+				s.DirScroll--
 			}
 		} else if s.ActivePanel == 2 {
 			s.FilePosition--
 			if s.FilePosition < 0 {
 				s.FilePosition = len(s.Files) - 1
+				// Ajustar el scroll para que el último elemento esté visible
+				s.FileScroll = max(0, s.FilePosition - 9)
+			} else if s.FilePosition < s.FileScroll {
+				// Cuando subimos, movemos el scroll una línea hacia arriba
+				s.FileScroll--
 			}
 		}
 	case "i":
@@ -147,6 +165,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 						}
 						s.Files = fileList // Update the files
 						s.FilePosition = 0 // Reset the position in the file panel
+						s.FileScroll = 0   // Reset the scroll position
 					} else {
 						s.Files = []string{} // If there is an error, clear the file list
 					}
@@ -155,12 +174,14 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		} else if s.ActivePanel == 2 && len(s.Files) > 0 {
 			// If we are already in the file panel, only reset the position
 			s.FilePosition = 0
+			s.FileScroll = 0
 		}
 	case "f":
 		// Change to the file panel
 		s.ActivePanel = 2
 		if len(s.Files) > 0 {
 			s.FilePosition = 0
+			s.FileScroll = 0
 		}
 	case "d":
 		// Change to the directory panel
@@ -198,6 +219,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				}
 
 				items = s.Filtered // Update the items with the new ones
+				s.DirScroll = 0    // Reset the scroll position
 			}
 		}
 	case "esc", "h":
@@ -217,6 +239,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 
 				// Delete the last state of the history
 				s.History = s.History[:len(s.History)-1]
+				s.DirScroll = 0 // Reset the scroll position
 			}
 		}
 	case "s":
@@ -243,6 +266,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 						// If we are deselecting, clear the file list
 						s.Files = []string{}
 						s.FilePosition = 0
+						s.FileScroll = 0
 					}
 				}
 			}

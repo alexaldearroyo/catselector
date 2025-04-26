@@ -340,7 +340,11 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 		}
 	}
 
-	for i := 0; i < panelHeight && i < len(files); i++ {
+	// Calcular el rango de elementos a mostrar
+	start := selector.FileScroll
+	end := min(start + panelHeight, len(files))
+
+	for i := start; i < end; i++ {
 		file := files[i]
 		icon := GetFileIcon(file)
 
@@ -386,6 +390,11 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 		} else {
 			b.WriteString(White.Render(line) + "\n")
 		}
+	}
+
+	// Añadir líneas vacías si es necesario
+	for i := end - start; i < panelHeight; i++ {
+		b.WriteString(strings.Repeat(" ", panelWidth) + "\n")
 	}
 
 	return b.String()
@@ -575,13 +584,12 @@ func getTerminalSize() (int, int) {
 func renderLeftPanel(items []string, selected map[string]bool, directory string, position, start, height, width int, active bool, includeSubdirs bool) string {
 	var b strings.Builder
 
-	end := start + height
-	if end > len(items) {
-		end = len(items)
-	}
-
 	// Get the current selector
 	selector := GetCurrentSelector()
+
+	// Calcular el rango de elementos a mostrar
+	start = selector.DirScroll
+	end := min(start + height, len(items))
 
 	for i := start; i < end; i++ {
 		item := items[i]
@@ -594,6 +602,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 			itemKey := selector.GetSelectionKey(item)
 			isSelected = selector.Selection[itemKey]
 		}
+		// Ajustar el focus según la posición del scroll
 		hasFocus := active && i == position
 
 		marker := "  "
@@ -623,6 +632,11 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 		} else {
 			b.WriteString(Green.Render(line) + "\n")
 		}
+	}
+
+	// Añadir líneas vacías si es necesario
+	for i := end - start; i < height; i++ {
+		b.WriteString(strings.Repeat(" ", width) + "\n")
 	}
 
 	return b.String()
@@ -737,4 +751,20 @@ func countSelected(selector *Selector) (int, int) {
 	}
 
 	return selectedFiles, selectedDirs
+}
+
+// Función auxiliar para obtener el mínimo de dos números
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Función auxiliar para obtener el máximo de dos números
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

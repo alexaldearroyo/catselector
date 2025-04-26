@@ -24,6 +24,8 @@ type Selector struct {
 	IncludeMode  bool              // Include mode for subdirectories
 	StatusMessage string           // Status message to display to the user
 	StatusTime   int64             // Time when the status message was set
+	DirScroll    int               // Scroll position for directories panel
+	FileScroll   int               // Scroll position for files panel
 }
 
 // Method to update the files of the selected directory

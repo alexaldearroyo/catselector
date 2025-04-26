@@ -30,17 +30,19 @@ func main() {
 	initialModel := model{
 		position: 0,
 		items:    core.PrepareDirItems(core.GetRootDirectory()),
-	selected: make(map[string]bool),
-	selector: core.Selector{
-		Directory:   core.GetRootDirectory(),
-		ActivePanel: 1,
-		Position:    0,
-		Selection:   make(map[string]bool),
-		Filtered:    core.PrepareDirItems(core.GetRootDirectory()),
-		Files:       []string{},
-		IncludeMode: false,
-	},
-}
+		selected: make(map[string]bool),
+		selector: core.Selector{
+			Directory:   core.GetRootDirectory(),
+			ActivePanel: 1,
+			Position:    0,
+			Selection:   make(map[string]bool),
+			Filtered:    core.PrepareDirItems(core.GetRootDirectory()),
+			Files:       []string{},
+			IncludeMode: false,
+			DirScroll:   0,
+			FileScroll:  0,
+		},
+	}
 
 	// Start the program with the model
 	p := tea.NewProgram(initialModel)
