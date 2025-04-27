@@ -44,7 +44,7 @@ Built in Go using:
 - Cross-platform compatibility
 - Intuitive and responsive user interface
 
-## 🚀 Installation
+## Installation
 
 _TO DO_
 
