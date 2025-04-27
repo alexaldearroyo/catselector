@@ -1,6 +1,6 @@
 # 🐱 Cat Selector
 
-Cat Selector is an interactive terminal tool for browsing, selecting, concatenating, and exporting files and directories. It allows users to explore directories, select multiple files (or entire folders), and combine their content for viewing, external editing, or clipboard copying.
+Cat Selector is an interactive terminal tool for browsing, selecting, concatenating, and exporting files and directories. It allows users to explore directories, select multiple files (or entire folders), and combine their text content for viewing, external editing, or clipboard copying.
 
 ## Key Features
 
