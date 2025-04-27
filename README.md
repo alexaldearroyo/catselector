@@ -44,9 +44,32 @@ Built in Go using:
 - Cross-platform compatibility
 - Intuitive and responsive user interface
 
+
 ## Installation
 
-_TO DO_
+### macOS (via Homebrew)
+
+```bash
+brew tap alexaldearroyo/catselector
+brew install catsel
+```
+
+### Manual Installation (macOS / Linux)
+
+First, clone the repository:
+
+```bash
+git clone https://github.com/alexaldearroyo/catselector.git
+cd catselector
+````
+
+Then build and install:
+
+```bash
+make build
+sudo make install
+```
+This will compile the project and install the catsel binary into `/usr/local/bin`.
 
 ## Usage
 
