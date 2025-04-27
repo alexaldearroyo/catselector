@@ -11,6 +11,53 @@ import (
 )
 
 func main() {
+	// Aquí checamos si nos pidieron --help o --version
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "--help", "-h":
+			printHelp()
+			os.Exit(0)
+		case "--version", "-v":
+			printVersion()
+			os.Exit(0)
+		}
+	}
+
+	// Aquí arranca la app normal
+	runApp()
+}
+
+func printHelp() {
+	fmt.Println(`Cat Selector - Smart Concatenation Selector
+A file browser utility that allows you to select multiple files and concatenate them for viewing or editing.
+
+Usage:
+  catsel            Start Cat Selector
+  catsel --help     Show this help message
+  catsel --version  Show version information
+
+Controls:
+  j / Down          Move down
+  k / Up            Move up
+  Enter / l         Enter directory
+  Esc / h           Go to previous directory
+  s                 Select or deselect
+  a                 Select or deselect all
+  i                 Toggle include subdirectories in selection
+  o                 Concatenate and open selection in external editor
+  c                 Concatenate and copy selection to clipboard
+  Tab               Switch panel
+  f                 Go to files panel
+  d                 Go to directories panel
+  q                 Quit
+`)
+}
+
+func printVersion() {
+	fmt.Println("Cat Selector version 1.0.0")
+}
+
+func runApp() {
 	// Enter terminal's alternate screen mode
 	fmt.Print("\033[?1049h")
 	// Clear the screen
@@ -50,13 +97,11 @@ func main() {
 	// Run the application
 	err := p.Start()
 	if err != nil {
-		fmt.Println("Error: ", err)
-		// Restore the terminal when exiting with an error
+		fmt.Println("Error:", err)
 		fmt.Print("\033[?1049l")
 		os.Exit(1)
 	}
 
-	// Restore the terminal when exiting normally
 	fmt.Print("\033[?1049l")
 }
 
