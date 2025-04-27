@@ -1,6 +1,18 @@
 # 🐱 Cat Selector
 
-Cat Selector is an interactive terminal tool for browsing, selecting, concatenating, and exporting files and directories. It allows users to explore directories, select multiple files (or entire folders), and combine their text content for viewing, external editing, or clipboard copying.
+> The fastest way to explore, select and concatenate files from your terminal.
+
+![Demo](demo.gif)
+
+
+Cat Selector is an interactive terminal tool for browsing, selecting, concatenating, and exporting text content in files and directories, combining multiple actions into a single seamless flow.
+
+## Why Cat Selector?
+Unlike traditional file managers (ranger, lf) or basic commands (find, cat, less), Cat Selector provides:
+- True multi-selection across directories and files.
+- Instant generation and single concatenated text output.
+
+A direct, visual, and straight-forward content selector and concatenated text file exporter.
 
 ## Key Features
 
@@ -47,6 +59,11 @@ Built in Go using:
 
 ## Installation
 
+### Requirements
+
+- [Go](https://go.dev/dl/) (>=1.20) — needed for manual builds
+- [Nerd Fonts](https://www.nerdfonts.com/) — required for correct icon rendering
+
 ### macOS (via Homebrew)
 
 ```bash
@@ -61,7 +78,7 @@ First, clone the repository:
 ```bash
 git clone https://github.com/alexaldearroyo/catselector.git
 cd catselector
-````
+```
 
 Then build and install:
 
@@ -85,7 +102,7 @@ Contributions are welcome. Please open an issue to discuss major changes before 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 
 © Alex Arroyo 2025
