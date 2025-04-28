@@ -11,19 +11,21 @@ import (
 )
 
 func main() {
-	// Aquí checamos si nos pidieron --help o --version
+	// Check if --help or --version was requested
 	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "--help", "-h":
-			printHelp()
-			os.Exit(0)
-		case "--version", "-v":
-			printVersion()
-			os.Exit(0)
+		for _, arg := range os.Args[1:] {
+				switch arg {
+				case "--help", "-h":
+						printHelp()
+						os.Exit(0)
+				case "--version", "-v":
+						printVersion()
+						os.Exit(0)
+				}
 		}
-	}
+}
 
-	// Aquí arranca la app normal
+
 	runApp()
 }
 
@@ -68,7 +70,7 @@ func runApp() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		// Restaurar la terminal al salir
+		// Restore the terminal when exiting
 		fmt.Print("\033[?1049l")
 		os.Exit(0)
 	}()
@@ -110,7 +112,7 @@ type model struct {
 	position int
 	items    []string
 	selected map[string]bool
-	selector core.Selector // Add the selector here
+	selector core.Selector
 }
 
 func (m model) Init() tea.Cmd {
