@@ -118,14 +118,37 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		}
 	}
 
-	// Normal key handling
+	// Manejo normal de teclas
 	switch key {
 	case "/":
-		// Enter search mode
+		// Entrar en modo búsqueda
 		s.SearchMode = true
 		s.SearchQuery = ""
 		s.OriginalItems = items
 		return position
+	case "esc", "h":
+		// Si estamos en un resultado de búsqueda, volver a la vista normal
+		if len(s.Filtered) != len(s.OriginalItems) || len(s.Files) > 0 {
+			s.Filtered = s.OriginalItems
+			s.Files = []string{}
+			s.DirScroll = 0
+			s.FileScroll = 0
+			return 0
+		}
+		// Comportamiento normal de ESC/h
+		rootDir := GetRootDirectory()
+		if s.Directory != rootDir && len(s.History) > 0 {
+			lastState := s.History[len(s.History)-1]
+			if info, err := os.Stat(lastState.Directory); err == nil && info.IsDir() {
+				s.Directory = lastState.Directory
+				s.Filtered = PrepareDirItems(lastState.Directory)
+				position = lastState.Position
+				s.Position = lastState.Position
+				items = s.Filtered
+				s.History = s.History[:len(s.History)-1]
+				s.DirScroll = 0
+			}
+		}
 	case "q":
 		// Restore the terminal and exit
 		fmt.Print("\033[?1049l")
@@ -341,26 +364,6 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 
 				items = s.Filtered // Update the items with the new ones
 				s.DirScroll = 0    // Reset the scroll position
-			}
-		}
-	case "esc", "h":
-		// Navigate back if we are not in the root directory of the application
-		rootDir := GetRootDirectory()
-		if s.Directory != rootDir && len(s.History) > 0 {
-			// Get the last state of the history
-			lastState := s.History[len(s.History)-1]
-
-			// Check if the directory of the history exists and is accessible
-			if info, err := os.Stat(lastState.Directory); err == nil && info.IsDir() {
-				s.Directory = lastState.Directory
-				s.Filtered = PrepareDirItems(lastState.Directory)
-				position = lastState.Position
-				s.Position = lastState.Position
-				items = s.Filtered
-
-				// Delete the last state of the history
-				s.History = s.History[:len(s.History)-1]
-				s.DirScroll = 0 // Reset the scroll position
 			}
 		}
 	case "s":
