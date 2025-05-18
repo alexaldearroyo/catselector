@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -20,7 +21,40 @@ func CaptureInput(key string) string {
 }
 
 func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
+	// If we are in search mode
+	if s.SearchMode {
+		switch key {
+		case "esc":
+			// Exit search mode
+			s.SearchMode = false
+			s.SearchQuery = ""
+			s.Filtered = s.OriginalItems
+			return position
+		case "backspace":
+			// Delete the last character of the search
+			if len(s.SearchQuery) > 0 {
+				s.SearchQuery = s.SearchQuery[:len(s.SearchQuery)-1]
+				s.Filtered = filterItems(s.OriginalItems, s.SearchQuery)
+			}
+			return position
+		default:
+			// Add a character to the search
+			if len(key) == 1 {
+				s.SearchQuery += key
+				s.Filtered = filterItems(s.OriginalItems, s.SearchQuery)
+			}
+			return position
+		}
+	}
+
+	// Normal key handling
 	switch key {
+	case "/":
+		// Enter search mode
+		s.SearchMode = true
+		s.SearchQuery = ""
+		s.OriginalItems = items
+		return position
 	case "q":
 		// Restore the terminal and exit
 		fmt.Print("\033[?1049l")
@@ -413,4 +447,22 @@ func countSelectedFiles(s *Selector) int {
 		}
 	}
 	return count
+}
+
+// Nueva función para filtrar items
+func filterItems(items []string, query string) []string {
+	if query == "" {
+		return items
+	}
+
+	query = strings.ToLower(query)
+	var filtered []string
+
+	for _, item := range items {
+		if strings.Contains(strings.ToLower(item), query) {
+			filtered = append(filtered, item)
+		}
+	}
+
+	return filtered
 }

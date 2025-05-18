@@ -26,6 +26,10 @@ type Selector struct {
 	StatusTime   int64             // Time when the status message was set
 	DirScroll    int               // Scroll position for directories panel
 	FileScroll   int               // Scroll position for files panel
+	// Nuevos campos para la búsqueda
+	SearchMode   bool              // Indica si estamos en modo búsqueda
+	SearchQuery  string            // La consulta de búsqueda actual
+	OriginalItems []string         // Guarda los items originales antes de la búsqueda
 }
 
 // Method to update the files of the selected directory

@@ -165,13 +165,13 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	leftCounter := renderLeft(fmt.Sprintf("%d items", totalItems), false, true)
 	middleCounter := renderLeft(fmt.Sprintf("%d files", totalFiles), false, true)
 
-	// Determinar el texto para el panel Preview
+	// Determine the text for the Preview panel
 	var rightCounter string
 	if activePanel == 2 && filePosition >= 0 && filePosition < len(files) {
-		// Si estamos en el panel Files, mostrar el nombre del archivo
+		// If we are in the Files panel, show the file name
 		rightCounter = renderLeft(files[filePosition], false, true)
 	} else {
-		// Si no, mostrar el contador de subdirectorios
+		// If we are not in the Files panel, show the subdirectory counter
 		rightCounter = renderLeft(fmt.Sprintf("%d subdirs", totalSubdirs), false, true)
 	}
 
@@ -257,12 +257,12 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 
 	// Add the status bar at the bottom
 	statusBar := strings.Repeat("─", width)
-	if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 3 {
-		// Show the message for 3 seconds
-		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-		statusBar = statusStyle.Render(selector.StatusMessage)
+	if selector != nil && selector.SearchMode {
+		searchText := "Search: " + selector.SearchQuery
+		statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(searchText)
+	} else if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 3 {
+		statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(selector.StatusMessage)
 	} else {
-		// Show an empty status bar
 		statusBar = strings.Repeat(" ", width)
 	}
 
