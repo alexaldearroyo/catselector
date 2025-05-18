@@ -20,13 +20,13 @@ func CaptureInput(key string) string {
 	}
 }
 
-// Estructura para mantener los resultados de búsqueda separados
+// Structure to maintain separated search results
 type SearchResults struct {
 	Directories []string
 	Files       []string
 }
 
-// Función para buscar recursivamente y separar resultados
+// Function to search recursively and separate results
 func searchRecursively(rootDir string, query string) SearchResults {
 	var results SearchResults
 	query = strings.ToLower(query)
@@ -36,13 +36,13 @@ func searchRecursively(rootDir string, query string) SearchResults {
 			return nil
 		}
 
-		// Obtener el nombre relativo desde el directorio raíz
+		// Get the relative name from the root directory
 		relPath, err := filepath.Rel(rootDir, path)
 		if err != nil {
 			return nil
 		}
 
-		// Si el nombre contiene la consulta, añadirlo a los resultados correspondientes
+		// If the name contains the query, add it to the corresponding results
 		if strings.Contains(strings.ToLower(relPath), query) {
 			if info.IsDir() {
 				results.Directories = append(results.Directories, relPath)
@@ -58,42 +58,42 @@ func searchRecursively(rootDir string, query string) SearchResults {
 }
 
 func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
-	// Si estamos en modo búsqueda
+	// If we are in search mode
 	if s.SearchMode {
 		switch key {
 		case "esc":
-			// Salir del modo búsqueda
+			// Exit search mode
 			s.SearchMode = false
 			s.SearchQuery = ""
 			s.Filtered = s.OriginalItems
-			s.Files = []string{} // Limpiar los archivos
+			s.Files = []string{} // Clear the files
 			return position
 		case "enter":
-			// Salir del modo búsqueda y mover el cursor al primer resultado
+			// Exit search mode and move the cursor to the first result
 			s.SearchMode = false
 			s.SearchQuery = ""
 
-			// Si hay directorios, mover al panel de directorios
+			// If there are directories, move to the directory panel
 			if len(s.Filtered) > 0 {
-				s.ActivePanel = 1 // Panel de directorios
-				s.Position = 0    // Primera posición
-				s.DirScroll = 0   // Resetear scroll
+				s.ActivePanel = 1 // Directory panel
+				s.Position = 0    // First position
+				s.DirScroll = 0   // Reset scroll
 				return 0
 			}
-			// Si no hay directorios pero hay archivos, mover al panel de archivos
+			// If there are no directories but there are files, move to the file panel
 			if len(s.Files) > 0 {
-				s.ActivePanel = 2 // Panel de archivos
-				s.FilePosition = 0 // Primera posición
-				s.FileScroll = 0   // Resetear scroll
+				s.ActivePanel = 2 // File panel
+				s.FilePosition = 0 // First position
+				s.FileScroll = 0   // Reset scroll
 				return position
 			}
-			// Si no hay resultados, volver a la vista normal
+			// If there are no results, return to normal view
 			s.Filtered = s.OriginalItems
 			s.Files = []string{}
 			return position
 
 		case "backspace":
-			// Eliminar último carácter de la búsqueda
+			// Delete the last character of the search
 			if len(s.SearchQuery) > 0 {
 				s.SearchQuery = s.SearchQuery[:len(s.SearchQuery)-1]
 				if s.SearchQuery == "" {
@@ -107,7 +107,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			}
 			return position
 		default:
-			// Añadir carácter a la búsqueda
+			// Add a character to the search
 			if len(key) == 1 {
 				s.SearchQuery += key
 				results := searchRecursively(GetRootDirectory(), s.SearchQuery)
@@ -118,16 +118,16 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		}
 	}
 
-	// Manejo normal de teclas
+	// Normal key handling
 	switch key {
 	case "/":
-		// Entrar en modo búsqueda
+		// Enter search mode
 		s.SearchMode = true
 		s.SearchQuery = ""
 		s.OriginalItems = items
 		return position
 	case "esc", "h":
-		// Si estamos en un resultado de búsqueda, volver a la vista normal
+		// If we are in a search result, return to normal view
 		if len(s.Filtered) != len(s.OriginalItems) || len(s.Files) > 0 {
 			s.Filtered = s.OriginalItems
 			s.Files = []string{}
@@ -135,7 +135,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			s.FileScroll = 0
 			return 0
 		}
-		// Comportamiento normal de ESC/h
+		// Normal behavior of ESC/h
 		rootDir := GetRootDirectory()
 		if s.Directory != rootDir && len(s.History) > 0 {
 			lastState := s.History[len(s.History)-1]
@@ -160,11 +160,11 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				position = 0
 				s.DirScroll = 0
 			} else {
-				// Calcular el número de líneas visibles basado en el tamaño de la terminal
+				// Calculate the number of visible lines based on the terminal size
 				_, height := getTerminalSize()
-				visibleLines := height - 9 // 9 líneas para headers y otros elementos
+				visibleLines := height - 9 // 9 lines for headers and other elements
 
-				// Si la posición actual está fuera del área visible, ajustar el scroll
+				// If the current position is outside the visible area, adjust the scroll
 				if position >= s.DirScroll + visibleLines {
 					s.DirScroll = position - visibleLines + 1
 				}
@@ -175,11 +175,11 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 				s.FilePosition = 0
 				s.FileScroll = 0
 			} else {
-				// Calcular el número de líneas visibles basado en el tamaño de la terminal
+				// Calculate the number of visible lines based on the terminal size
 				_, height := getTerminalSize()
-				visibleLines := height - 9 // 9 líneas para headers y otros elementos
+				visibleLines := height - 9 // 9 lines for headers and other elements
 
-				// Si la posición actual está fuera del área visible, ajustar el scroll
+				// If the current position is outside the visible area, adjust the scroll
 				if s.FilePosition >= s.FileScroll + visibleLines {
 					s.FileScroll = s.FilePosition - visibleLines + 1
 				}
@@ -190,24 +190,24 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			position--
 			if position < 0 {
 				position = itemCount - 1
-				// Ajustar el scroll para que el último elemento esté visible
+				// Adjust the scroll to keep the last element visible
 				_, height := getTerminalSize()
 				visibleLines := height - 9
 				s.DirScroll = max(0, position - visibleLines + 1)
 			} else if position < s.DirScroll {
-				// Ajustar el scroll para mantener visible el elemento actual
+				// Adjust the scroll to keep the current element visible
 				s.DirScroll = position
 			}
 		} else if s.ActivePanel == 2 {
 			s.FilePosition--
 			if s.FilePosition < 0 {
 				s.FilePosition = len(s.Files) - 1
-				// Ajustar el scroll para que el último elemento esté visible
+				// Adjust the scroll to keep the last element visible
 				_, height := getTerminalSize()
 				visibleLines := height - 9
 				s.FileScroll = max(0, s.FilePosition - visibleLines + 1)
 			} else if s.FilePosition < s.FileScroll {
-				// Ajustar el scroll para mantener visible el elemento actual
+				// Adjust the scroll to keep the current element visible
 				s.FileScroll = s.FilePosition
 			}
 		}
@@ -523,7 +523,6 @@ func countSelectedFiles(s *Selector) int {
 	return count
 }
 
-// Nueva función para filtrar items
 func filterItems(items []string, query string) []string {
 	if query == "" {
 		return items

@@ -91,7 +91,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		selector := GetCurrentSelector()
 		var subdirText, selectedText string
 
-		// Determinar el estado de los subdirectorios
+		// Determine the state of the subdirectories
 		if selector.IncludeMode {
 			subdirText = White.Render("Subdirectories: ") + Magenta.Render("Included")
 		} else {

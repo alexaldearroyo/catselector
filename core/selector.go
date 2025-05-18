@@ -27,10 +27,10 @@ type Selector struct {
 	DirScroll    int               // Scroll position for directories panel
 	FileScroll   int               // Scroll position for files panel
 	// Nuevos campos para la búsqueda
-	SearchMode   bool              // Indica si estamos en modo búsqueda
-	SearchQuery  string            // La consulta de búsqueda actual
-	OriginalItems []string         // Guarda los items originales antes de la búsqueda
-	IsSearching  bool              // Nuevo campo para indicar si estamos en modo búsqueda global
+	SearchMode   bool              // Indicates if we are in search mode
+	SearchQuery  string            // The current search query
+	OriginalItems []string         // Original items before the search
+	IsSearching  bool              // Indicates if we are in global search mode
 }
 
 // Method to update the files of the selected directory
