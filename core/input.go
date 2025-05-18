@@ -127,7 +127,7 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		s.OriginalItems = items
 		return position
 	case "esc", "h":
-		// If we are in a search result, return to normal view
+		// Si estamos en una búsqueda, volver a la vista normal
 		if len(s.Filtered) != len(s.OriginalItems) || len(s.Files) > 0 {
 			s.Filtered = s.OriginalItems
 			s.Files = []string{}
@@ -135,17 +135,56 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			s.FileScroll = 0
 			return 0
 		}
-		// Normal behavior of ESC/h
+
+		// Comportamiento normal de ESC/h
 		rootDir := GetRootDirectory()
-		if s.Directory != rootDir && len(s.History) > 0 {
-			lastState := s.History[len(s.History)-1]
-			if info, err := os.Stat(lastState.Directory); err == nil && info.IsDir() {
-				s.Directory = lastState.Directory
-				s.Filtered = PrepareDirItems(lastState.Directory)
-				position = lastState.Position
-				s.Position = lastState.Position
+
+		// Si no estamos en el directorio raíz, ir al directorio padre
+		// independientemente del historial
+		if s.Directory != rootDir {
+			// Guardar el estado actual en el historial antes de cambiar
+			if len(s.History) == 0 || s.History[len(s.History)-1].Directory != s.Directory {
+				s.History = append(s.History, NavigationHistory{
+					Directory: s.Directory,
+					Position:  position,
+				})
+			}
+
+			// Obtener el directorio padre
+			parentDir := filepath.Dir(s.Directory)
+
+			// Verificar que el directorio padre existe y es accesible
+			if info, err := os.Stat(parentDir); err == nil && info.IsDir() {
+				s.Directory = parentDir
+				s.Filtered = PrepareDirItems(parentDir)
+
+				// Buscar la posición del directorio actual en la nueva lista
+				// currentDirName := filepath.Base(s.Directory)
+				// parentDirName := filepath.Base(parentDir)
+				targetName := filepath.Base(s.Directory)
+
+				// Si estamos en el directorio raíz, usar "."
+				if parentDir == rootDir {
+					targetName = "."
+				}
+
+				foundPosition := false
+				for i, item := range s.Filtered {
+					if item == targetName {
+						position = i
+						s.Position = i
+						foundPosition = true
+						break
+					}
+				}
+
+				// Si no encontramos la posición, usar la primera
+				if !foundPosition {
+					position = 0
+					s.Position = 0
+				}
+
 				items = s.Filtered
-				s.History = s.History[:len(s.History)-1]
 				s.DirScroll = 0
 			}
 		}
