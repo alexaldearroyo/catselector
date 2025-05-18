@@ -259,7 +259,7 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	statusBar := strings.Repeat("─", width)
 	if selector != nil && selector.SearchMode {
 		totalResults := len(selector.Filtered) + len(selector.Files)
-		searchText := fmt.Sprintf("Search: %s (%d results: %d dirs, %d files)",
+		searchText := fmt.Sprintf("Search: %s (%d results: %d dirs, %d files) [Press Enter to select first result]",
 			selector.SearchQuery,
 			totalResults,
 			len(selector.Filtered),

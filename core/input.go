@@ -68,6 +68,30 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 			s.Filtered = s.OriginalItems
 			s.Files = []string{} // Limpiar los archivos
 			return position
+		case "enter":
+			// Salir del modo búsqueda y mover el cursor al primer resultado
+			s.SearchMode = false
+			s.SearchQuery = ""
+
+			// Si hay directorios, mover al panel de directorios
+			if len(s.Filtered) > 0 {
+				s.ActivePanel = 1 // Panel de directorios
+				s.Position = 0    // Primera posición
+				s.DirScroll = 0   // Resetear scroll
+				return 0
+			}
+			// Si no hay directorios pero hay archivos, mover al panel de archivos
+			if len(s.Files) > 0 {
+				s.ActivePanel = 2 // Panel de archivos
+				s.FilePosition = 0 // Primera posición
+				s.FileScroll = 0   // Resetear scroll
+				return position
+			}
+			// Si no hay resultados, volver a la vista normal
+			s.Filtered = s.OriginalItems
+			s.Files = []string{}
+			return position
+
 		case "backspace":
 			// Eliminar último carácter de la búsqueda
 			if len(s.SearchQuery) > 0 {
