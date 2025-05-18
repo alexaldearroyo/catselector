@@ -20,28 +20,75 @@ func CaptureInput(key string) string {
 	}
 }
 
+// Estructura para mantener los resultados de búsqueda separados
+type SearchResults struct {
+	Directories []string
+	Files       []string
+}
+
+// Función para buscar recursivamente y separar resultados
+func searchRecursively(rootDir string, query string) SearchResults {
+	var results SearchResults
+	query = strings.ToLower(query)
+
+	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		// Obtener el nombre relativo desde el directorio raíz
+		relPath, err := filepath.Rel(rootDir, path)
+		if err != nil {
+			return nil
+		}
+
+		// Si el nombre contiene la consulta, añadirlo a los resultados correspondientes
+		if strings.Contains(strings.ToLower(relPath), query) {
+			if info.IsDir() {
+				results.Directories = append(results.Directories, relPath)
+			} else {
+				results.Files = append(results.Files, relPath)
+			}
+		}
+
+		return nil
+	})
+
+	return results
+}
+
 func HandleKeyPress(key string, position, itemCount int, selected map[string]bool, items []string, s *Selector) int {
-	// If we are in search mode
+	// Si estamos en modo búsqueda
 	if s.SearchMode {
 		switch key {
 		case "esc":
-			// Exit search mode
+			// Salir del modo búsqueda
 			s.SearchMode = false
 			s.SearchQuery = ""
 			s.Filtered = s.OriginalItems
+			s.Files = []string{} // Limpiar los archivos
 			return position
 		case "backspace":
-			// Delete the last character of the search
+			// Eliminar último carácter de la búsqueda
 			if len(s.SearchQuery) > 0 {
 				s.SearchQuery = s.SearchQuery[:len(s.SearchQuery)-1]
-				s.Filtered = filterItems(s.OriginalItems, s.SearchQuery)
+				if s.SearchQuery == "" {
+					s.Filtered = s.OriginalItems
+					s.Files = []string{}
+				} else {
+					results := searchRecursively(GetRootDirectory(), s.SearchQuery)
+					s.Filtered = results.Directories
+					s.Files = results.Files
+				}
 			}
 			return position
 		default:
-			// Add a character to the search
+			// Añadir carácter a la búsqueda
 			if len(key) == 1 {
 				s.SearchQuery += key
-				s.Filtered = filterItems(s.OriginalItems, s.SearchQuery)
+				results := searchRecursively(GetRootDirectory(), s.SearchQuery)
+				s.Filtered = results.Directories
+				s.Files = results.Files
 			}
 			return position
 		}

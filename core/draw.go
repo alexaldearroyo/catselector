@@ -258,7 +258,12 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Add the status bar at the bottom
 	statusBar := strings.Repeat("─", width)
 	if selector != nil && selector.SearchMode {
-		searchText := "Search: " + selector.SearchQuery
+		totalResults := len(selector.Filtered) + len(selector.Files)
+		searchText := fmt.Sprintf("Search: %s (%d results: %d dirs, %d files)",
+			selector.SearchQuery,
+			totalResults,
+			len(selector.Filtered),
+			len(selector.Files))
 		statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(searchText)
 	} else if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 3 {
 		statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(selector.StatusMessage)

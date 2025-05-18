@@ -30,6 +30,7 @@ type Selector struct {
 	SearchMode   bool              // Indica si estamos en modo búsqueda
 	SearchQuery  string            // La consulta de búsqueda actual
 	OriginalItems []string         // Guarda los items originales antes de la búsqueda
+	IsSearching  bool              // Nuevo campo para indicar si estamos en modo búsqueda global
 }
 
 // Method to update the files of the selected directory
