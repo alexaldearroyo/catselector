@@ -56,7 +56,7 @@ Controls:
 }
 
 func printVersion() {
-	fmt.Println("Cat Selector version 1.0.2")
+	fmt.Println("Cat Selector version 1.0.3")
 }
 
 func runApp() {
