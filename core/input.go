@@ -128,7 +128,8 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		return position
 	case "esc", "h":
 		// Si estamos en una búsqueda, volver a la vista normal
-		if len(s.Filtered) != len(s.OriginalItems) || len(s.Files) > 0 {
+		if s.SearchMode || (len(s.Filtered) != len(s.OriginalItems) && len(s.OriginalItems) > 0) {
+			s.SearchMode = false
 			s.Filtered = s.OriginalItems
 			s.Files = []string{}
 			s.DirScroll = 0
@@ -140,7 +141,6 @@ func HandleKeyPress(key string, position, itemCount int, selected map[string]boo
 		rootDir := GetRootDirectory()
 
 		// Si no estamos en el directorio raíz, ir al directorio padre
-		// independientemente del historial
 		if s.Directory != rootDir {
 			// Guardar el estado actual en el historial antes de cambiar
 			if len(s.History) == 0 || s.History[len(s.History)-1].Directory != s.Directory {
