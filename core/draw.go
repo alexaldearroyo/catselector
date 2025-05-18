@@ -281,8 +281,8 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 		{"o/c", "Open or Copy"},
 		{"s/a", "Select or All"},
 		{"i", "Include"},
-		{"Tab", "Change Panel"},
-		{"q", "Quit"},
+		{"/", "Search"},
+		{"Tab/q", "Change Panel or Quit"},
 	}
 
 	// Calculate the available width and the number of shortcuts per line
