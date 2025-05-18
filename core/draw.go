@@ -258,13 +258,20 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 	// Add the status bar at the bottom
 	statusBar := strings.Repeat("─", width)
 	if selector != nil && selector.SearchMode {
-		totalResults := len(selector.Filtered) + len(selector.Files)
-		searchText := fmt.Sprintf("Search: %s (%d results: %d dirs, %d files) [Press Enter to select first result]",
-			selector.SearchQuery,
-			totalResults,
-			len(selector.Filtered),
-			len(selector.Files))
-		statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(searchText)
+		if selector.SearchQuery == "" {
+			// Si no hay texto de búsqueda, solo mostrar el prompt
+			searchText := "Search: "
+			statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(searchText)
+		} else {
+			// Si hay texto de búsqueda, mostrar los resultados
+			totalResults := len(selector.Filtered) + len(selector.Files)
+			searchText := fmt.Sprintf("Search: %s (%d results: %d dirs, %d files) [Press Enter to select first result]",
+				selector.SearchQuery,
+				totalResults,
+				len(selector.Filtered),
+				len(selector.Files))
+			statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(searchText)
+		}
 	} else if selector != nil && selector.StatusMessage != "" && time.Now().Unix()-selector.StatusTime < 3 {
 		statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(selector.StatusMessage)
 	} else {
