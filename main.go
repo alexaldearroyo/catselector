@@ -14,17 +14,16 @@ func main() {
 	// Check if --help or --version was requested
 	if len(os.Args) > 1 {
 		for _, arg := range os.Args[1:] {
-				switch arg {
-				case "--help", "-h":
-						printHelp()
-						os.Exit(0)
-				case "--version", "-v":
-						printVersion()
-						os.Exit(0)
-				}
+			switch arg {
+			case "--help", "-h":
+				printHelp()
+				os.Exit(0)
+			case "--version", "-v":
+				printVersion()
+				os.Exit(0)
+			}
 		}
-}
-
+	}
 
 	runApp()
 }

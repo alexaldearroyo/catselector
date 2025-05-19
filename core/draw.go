@@ -305,6 +305,9 @@ func DrawLayout(position int, items []string, currentDir string, files []string,
 
 		// Calculate the space to distribute evenly
 		space := (width / numPerLine) - lipgloss.Width(combo)
+		if space < 0 {
+			space = 0
+		}
 		padding := strings.Repeat(" ", space)
 
 		if i < numPerLine {
@@ -354,7 +357,7 @@ func renderFilePanel(files []string, position, panelWidth, height, panelHeight i
 
 	// Calculate the range of elements to display
 	start := selector.FileScroll
-	end := min(start + panelHeight, len(files))
+	end := min(start+panelHeight, len(files))
 
 	contentWidth := panelWidth - 1
 
@@ -607,7 +610,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 
 	// Calculate the range of elements to display
 	start = selector.DirScroll
-	end := min(start + height, len(items))
+	end := min(start+height, len(items))
 
 	for i := start; i < end; i++ {
 		item := items[i]
@@ -653,8 +656,7 @@ func renderLeftPanel(items []string, selected map[string]bool, directory string,
 
 		b.WriteString(style.Render(line) + scrollChar + "\n")
 
-
-}
+	}
 	// Add empty lines if necessary
 	for i := end - start; i < height; i++ {
 		b.WriteString(strings.Repeat(" ", contentWidth) + " " + "\n")
@@ -796,7 +798,7 @@ func getScrollChar(lineIndex, panelHeight, totalItems, start, position int) stri
 	}
 
 	thumbSize := max(1, panelHeight*panelHeight/totalItems)
-	scrollRange := max(1, totalItems - panelHeight)
+	scrollRange := max(1, totalItems-panelHeight)
 
 	focusRelative := position - start
 
