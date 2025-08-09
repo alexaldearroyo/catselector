@@ -40,6 +40,7 @@ A direct, visual, and straight-forward content selector and concatenated text fi
 | `Tab` | Switch panel |
 | `f` | Go to files panel |
 | `d` | Go to directories panel |
+| `/` | Search |
 | `q` | Quit |
 
 ## Technologies
